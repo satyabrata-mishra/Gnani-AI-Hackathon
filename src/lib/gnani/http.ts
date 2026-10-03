@@ -1,19 +1,7 @@
 import "server-only";
-
-const RETRYABLE = new Set([429, 503]);
+import { fetchWithRetry } from "../http";
 
 /** Gnani rate-limits bursts aggressively; retry 429/503 with short backoff. */
-export async function gnaniFetch(
-  url: string,
-  init: RequestInit,
-  { retries = 2, baseDelayMs = 800 } = {},
-): Promise<Response> {
-  for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) });
-    if (!RETRYABLE.has(res.status) || attempt >= retries) return res;
-    const retryAfter = Number(res.headers.get("retry-after"));
-    const delay = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : baseDelayMs * 2 ** attempt;
-    await res.body?.cancel();
-    await new Promise((r) => setTimeout(r, delay));
-  }
+export function gnaniFetch(url: string, init: RequestInit, options?: { retries?: number; baseDelayMs?: number }) {
+  return fetchWithRetry(url, init, options);
 }

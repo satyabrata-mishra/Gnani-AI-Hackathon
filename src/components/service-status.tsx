@@ -23,9 +23,13 @@ export function ServiceStatusPills({ status }: { status: ServiceStatus }) {
       <Pill label="Prisma" ready={status.gnani} title="Gnani Prisma v2.5 · speech-to-text" />
       <Pill label="Timbre" ready={status.gnani} title="Gnani Timbre v2.5 · text-to-speech" />
       <Pill
-        label="Evon"
-        ready={status.evon}
-        title={status.evon ? `Evon endpoint · model "${status.evonModel}"` : "Evon endpoint not configured"}
+        label={status.reasoning?.provider === "gemini" ? "Gemini (stand-in)" : "Evon"}
+        ready={Boolean(status.reasoning)}
+        title={
+          status.reasoning
+            ? `${status.reasoning.label} · model "${status.reasoning.model}"`
+            : "Reasoning model not configured"
+        }
       />
     </div>
   );

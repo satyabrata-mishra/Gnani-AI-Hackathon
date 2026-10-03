@@ -169,7 +169,7 @@ export function SessionLauncher({ servicesReady }: { servicesReady: boolean }) {
           <p className="text-center text-xs text-ink-faint">
             {servicesReady
               ? "Voice session is the next milestone."
-              : "Add your Gnani and Evon credentials to .env.local to enable sessions."}
+              : "Add your Gnani key and a reasoning model (Evon or Gemini) to .env.local to enable sessions."}
           </p>
         </div>
       </aside>

@@ -1,4 +1,4 @@
-export type ServiceName = "prisma" | "timbre" | "evon" | "config";
+export type ServiceName = "prisma" | "timbre" | "evon" | "gemini" | "config";
 
 export class ServiceError extends Error {
   constructor(

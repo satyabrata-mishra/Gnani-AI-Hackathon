@@ -16,7 +16,7 @@
 | 🖥️ Live demo | _Coming soon — deploys after the voice session milestone_ |
 | 📣 LinkedIn / X post | _Coming soon_ |
 | 🧠 Repo (this) | _Add GitHub URL after first push_ |
-| 🧩 Gnani models used | Prisma v2.5 (STT) · Timbre v2.5 (TTS) · Evon v3.3 (reasoning) |
+| 🧩 Gnani models used | Prisma v2.5 (STT) · Timbre v2.5 (TTS) · Evon v3.3 (reasoning, pending a hosted endpoint; Gemini stands in meanwhile) |
 | 📘 Evon hosting guide | [`docs/evon-setup.md`](docs/evon-setup.md) |
 | 👤 Author | Satyabrata Mishra · solo entry |
 
@@ -24,9 +24,9 @@
 
 1. Open the app and pick a form (farmer enrolment, motor insurance claim, or personal loan) and the citizen's language.
 2. Open **Mic check** and press **Run full loop**: Timbre asks a question aloud, you answer, Prisma transcribes it in native script.
-3. Browse `src/lib/gnani/` for the Prisma and Timbre clients, `src/lib/evon.ts` for the Evon client, and `src/hooks/` for in-browser recording and playback.
+3. Browse `src/lib/gnani/` for the Prisma and Timbre clients, `src/lib/engine/` for the turn engine, `src/lib/forms/` for the validators, and `src/hooks/` for in-browser recording and playback.
 
-> Note: Evon is self-hosted on a GPU endpoint with scale-to-zero, so the first request after a pause can take a few minutes to wake.
+> **Reasoning model status:** Evon v3.3 is open-weight only (no hosted API), and it needs an 80 GB GPU. Until an Evon endpoint is available, Google Gemini (free tier) stands in behind the same OpenAI-compatible interface. Setting `EVON_BASE_URL` switches Bolo to Evon with no code changes, and the header shows which model is active.
 
 ---
 
@@ -49,9 +49,12 @@ Bolo is **not a chatbot**. It is a speech-to-structured-data engine: every answe
 | In-browser recording → 16 kHz WAV (AudioWorklet) | ✅ Working |
 | Mic check: Timbre asks → user answers → Prisma transcribes | ✅ Working |
 | Form templates + language/voice catalogue | ✅ Working |
-| Evon client (OpenAI-compatible, reasoning on/off, JSON schema output) | ✅ Built · ⏳ awaiting endpoint |
-| Evon turn engine: extract → normalise → validate → follow-up | ⏳ In progress |
-| Live voice session with field-by-field form filling | ⏳ In progress |
+| Reasoning client: Evon or Gemini, reasoning on/off, strict JSON output with one repair retry | ✅ Built |
+| Field validators (phone, PIN, ranges, dates, choices, yes/no) + cross-field checks, unit-tested | ✅ Working |
+| Turn engine: extract → normalise → validate → follow-up, with corrections, retries and skips | ✅ Built · unit-tested |
+| Localised question bank per form and language (one model call, cacheable audio) | ✅ Built |
+| End-of-form review: rule checks + model plausibility check + English summary | ✅ Built |
+| Live voice session with field-by-field form filling | ⏳ Next |
 | Read-back confirmation + English result with per-field audio evidence | 🗓️ Planned |
 | Describe-a-form → instant voice agent | 🗓️ Planned |
 | Officer dashboard | 🗓️ Planned |
@@ -121,9 +124,10 @@ Bolo is a turn-based loop where **the model proposes and code decides**: Evon ex
 
 ### 🧩 How the pieces fit
 
-- 🔐 **Server-only API routes** (`/api/stt`, `/api/tts`, `/api/health`) hold the Gnani key; the browser never sees credentials.
-- 🔁 **Resilient Gnani client** retries rate limits (429) and outages (503) with backoff and surfaces Gnani's own error messages.
-- 🧠 **Evon behind an OpenAI-compatible interface** — vLLM, SGLang or a Hugging Face Inference Endpoint all work by changing `.env.local`; no code changes.
+- 🔐 **Server-only API routes** (`/api/stt`, `/api/tts`, `/api/session/*`, `/api/health`) hold the keys; the browser never sees credentials.
+- 🔁 **Resilient clients** retry rate limits (429) and outages (503) with backoff and surface the provider's own error messages.
+- 🧠 **One OpenAI-compatible reasoning interface** — Evon on vLLM, SGLang or llama.cpp, or Gemini as the stand-in, selected by `.env.local`; no code changes.
+- 🗂️ **Stateless sessions** — the browser holds the session state and sends it with each turn; the server re-validates every value before the final review.
 - 🌐 **Language catalogue** maps each language to Prisma and Timbre codes, a matched voice, and a reply style for Evon.
 
 ### 🔬 Integration notes
@@ -146,19 +150,23 @@ bolo/
 │   └── worklets/pcm-recorder.js  # AudioWorklet: mic → Float32 PCM batches
 ├── scripts/
 │   ├── spike.mjs                 # Live check: Timbre → Prisma round trip + Evon latency
+│   ├── eval-turns.mjs            # Scores the turn engine on 24 messy multilingual answers
+│   ├── probe-evon-space.mjs      # Checks the community Evon demo on Hugging Face
 │   └── test-wav-pipeline.ts      # Verifies browser WAV encoding against Prisma
 └── src/
     ├── app/
     │   ├── page.tsx              # Start screen: choose form + language
-    │   ├── mic-check/page.tsx    # Voice loop without Evon
-    │   └── api/                  # stt, tts, health route handlers
+    │   ├── mic-check/page.tsx    # Voice loop without the reasoning model
+    │   └── api/                  # stt, tts, health, session/{start,turn,review}
     ├── components/               # Session launcher, mic button, mic check, header
     ├── hooks/                    # useVoiceRecorder, useSpeechPlayer
     └── lib/
-        ├── gnani/                # Prisma + Timbre clients, retrying fetch
-        ├── forms/                # Form schema types + demo templates
+        ├── gnani/                # Prisma + Timbre clients
+        ├── engine/               # Turn engine: extraction, apply rules, question bank, review
+        ├── forms/                # Form templates, field validators, cross-field checks
         ├── audio/wav.ts          # Downsampling + WAV encoding
-        ├── evon.ts               # Evon chat client (OpenAI-compatible)
+        ├── reasoning.ts          # Evon / Gemini chat client (OpenAI-compatible)
+        ├── http.ts               # Retrying fetch
         ├── languages.ts          # Languages, voices, sample prompts
         ├── env.ts                # Server-only configuration
         └── errors.ts             # Typed service errors → JSON responses
@@ -169,11 +177,13 @@ bolo/
 ```bash
 cd bolo
 npm install
-cp .env.example .env.local      # add GNANI_API_KEY; Evon values per docs/evon-setup.md
+cp .env.example .env.local      # add GNANI_API_KEY and GEMINI_API_KEY (or Evon values per docs/evon-setup.md)
 npm run dev                     # http://localhost:3000
 ```
 
 ```bash
+npm test             # unit tests: validators, cross-field checks, turn rules
+npm run eval         # live turn-engine score on messy multilingual answers (needs npm run dev)
 npm run spike        # live Timbre → Prisma round trip in Hindi and Kannada (+ Evon if configured)
 npm run test:audio   # browser WAV pipeline → /api/stt (needs npm run dev)
 npm run lint
@@ -191,7 +201,7 @@ Demo forms use mock data only — never enter real Aadhaar or account numbers.
 | 🌐 App & runtime | Next.js 16 (App Router, route handlers) · React 19 · TypeScript |
 | 🎨 UI | Tailwind CSS v4 · Framer Motion · Lucide icons · Geist + Instrument Serif |
 | 🎧 Speech | Gnani Prisma v2.5 (STT) · Gnani Timbre v2.5 (TTS) · Web Audio AudioWorklet |
-| 🧠 Reasoning | Gnani Evon v3.3, self-hosted behind an OpenAI-compatible server (vLLM or llama.cpp) |
+| 🧠 Reasoning | Gnani Evon v3.3 behind an OpenAI-compatible server (vLLM or llama.cpp); Google Gemini free tier as the stand-in until then |
 | ✅ Validation | Zod |
 | ☁️ Deploy | Vercel (app) · self-hosted GPU endpoint for Evon (hosting being finalised) |
 
