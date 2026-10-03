@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #faf7f2;
+  --color-surface: #ffffff;
+  --color-ink: #16181d;
+  --color-ink-soft: #4b505b;
+  --color-ink-faint: #8a8f99;
+  --color-line: #e8e2d7;
+  --color-line-strong: #d6cebf;
+  --color-brand: #3b3fc4;
+  --color-brand-strong: #2e31a3;
+  --color-brand-soft: #eef0ff;
+  --color-marigold: #f0a530;
+  --color-marigold-soft: #fdf3e1;
+  --color-ok: #1f8a5b;
+  --color-ok-soft: #e6f4ec;
+  --color-warn: #b45309;
+}
+
+@theme inline {
+  /* Indic scripts fall back to Nirmala UI (Windows) / Noto Sans (Android, macOS). */
+  --font-sans: var(--font-geist-sans), "Nirmala UI", "Noto Sans", system-ui, sans-serif;
+  --font-display: var(--font-instrument-serif), Georgia, serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+::selection {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-strong);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
