@@ -1,3 +1,5 @@
+import type { QuestionBank, ReviewResult, SessionState, SpokenPrompt, TurnResult } from "./engine/types";
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -16,6 +18,35 @@ async function toApiError(res: Response): Promise<ApiError> {
   } catch {
     return new ApiError(`Request failed (${res.status})`, res.status);
   }
+}
+
+async function postJson<T>(url: string, body: unknown): Promise<T> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json() as Promise<T>;
+}
+
+export function startSession(templateId: string, languageId: string) {
+  return postJson<{ state: SessionState; prompt: SpokenPrompt; bank: QuestionBank }>("/api/session/start", {
+    templateId,
+    languageId,
+  });
+}
+
+export function sendTurn(state: SessionState, transcript: string) {
+  return postJson<TurnResult>("/api/session/turn", { state, transcript });
+}
+
+export function requestReview(state: SessionState) {
+  return postJson<ReviewResult>("/api/session/review", { state });
+}
+
+export function requestReadBack(state: SessionState) {
+  return postJson<{ text: string; latencyMs: number }>("/api/session/readback", { state });
 }
 
 export interface TranscriptResponse {

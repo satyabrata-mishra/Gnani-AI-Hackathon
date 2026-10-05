@@ -16,6 +16,8 @@
   --color-ok: #1f8a5b;
   --color-ok-soft: #e6f4ec;
   --color-warn: #b45309;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
 }
 
 @theme inline {

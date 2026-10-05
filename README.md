@@ -22,9 +22,11 @@
 
 ### Quick start for judges
 
-1. Open the app and pick a form (farmer enrolment, motor insurance claim, or personal loan) and the citizen's language.
-2. Open **Mic check** and press **Run full loop**: Timbre asks a question aloud, you answer, Prisma transcribes it in native script.
-3. Browse `src/lib/gnani/` for the Prisma and Timbre clients, `src/lib/engine/` for the turn engine, `src/lib/forms/` for the validators, and `src/hooks/` for in-browser recording and playback.
+1. Open the app, pick a form (farmer enrolment, motor insurance claim, or personal loan) and the citizen's language, and press **Start voice session**.
+2. Answer each question aloud. Bolo stops listening when you pause, fills the form live, reads everything back, and lets you fix any field by voice before confirming.
+3. The result screen shows the English record, with a play button for the recording behind each field and a JSON download.
+4. If the microphone misbehaves, open **Mic check** and press **Run full loop** to test Timbre and Prisma on their own.
+5. Browse `src/lib/gnani/` for the Prisma and Timbre clients, `src/lib/engine/` for the turn engine, `src/lib/forms/` for the validators, and `src/hooks/` for in-browser recording and playback.
 
 > **Reasoning model status:** Evon v3.3 is open-weight only (no hosted API), and it needs an 80 GB GPU. Until an Evon endpoint is available, Google Gemini (free tier) stands in behind the same OpenAI-compatible interface. Setting `EVON_BASE_URL` switches Bolo to Evon with no code changes, and the header shows which model is active.
 
@@ -54,8 +56,8 @@ Bolo is **not a chatbot**. It is a speech-to-structured-data engine: every answe
 | Turn engine: extract → normalise → validate → follow-up, with corrections, retries and skips | ✅ Built · unit-tested |
 | Localised question bank per form and language (one model call, cacheable audio) | ✅ Built |
 | End-of-form review: rule checks + model plausibility check + English summary | ✅ Built |
-| Live voice session with field-by-field form filling | ⏳ Next |
-| Read-back confirmation + English result with per-field audio evidence | 🗓️ Planned |
+| Live voice session: auto-stop on silence, live form panel, type-instead fallback, retry on errors | ✅ Built · API smoke-tested, browser voice test pending |
+| Spoken read-back + fix any field by voice + English result with per-field audio evidence and JSON export | ✅ Built · API smoke-tested, browser voice test pending |
 | Describe-a-form → instant voice agent | 🗓️ Planned |
 | Officer dashboard | 🗓️ Planned |
 
@@ -115,11 +117,11 @@ Bolo is a turn-based loop where **the model proposes and code decides**: Evon ex
 | Layer | Responsibility |
 | --- | --- |
 | 🔊 Ask | Timbre speaks the question in the selected language and voice. Repeated prompts are served from cache to save credits and latency. |
-| 🎙️ Record | An AudioWorklet captures mono PCM in the browser, downsamples to 16 kHz and encodes WAV (Prisma does not accept the browser's default webm/opus). Auto-stops at 30 s. |
+| 🎙️ Record | An AudioWorklet captures mono PCM in the browser, downsamples to 16 kHz and encodes WAV (Prisma does not accept the browser's default webm/opus). Stops 1.6 s after the speaker goes quiet, after 8 s with no speech, or at 30 s. |
 | 🎧 Transcribe | Prisma REST returns a native-script transcript with inverse text normalisation (phone numbers, ₹ amounts, dates as digits). |
 | 🧠 Understand | Evon receives the form schema, answers so far and the new transcript, and returns strict JSON: field updates, confidence, evidence, and a reply in the user's language. Reasoning is off for turns (latency) and on for the final review. |
 | ✅ Validate | Deterministic checks — PIN code, mobile number, ranges, enums, cross-field rules (age vs date of birth). Evon is never trusted to validate formats on its own. |
-| 📋 Confirm | The completed form is read back in the user's language before submission. |
+| 📋 Confirm | The completed form is read back in the user's language while the review runs in the background. Any field can be re-answered by voice before confirming. |
 | 🧾 Evidence | Each field links to the transcript and audio clip that produced it. |
 
 ### 🧩 How the pieces fit
@@ -151,15 +153,18 @@ bolo/
 ├── scripts/
 │   ├── spike.mjs                 # Live check: Timbre → Prisma round trip + Evon latency
 │   ├── eval-turns.mjs            # Scores the turn engine on 24 messy multilingual answers
+│   ├── smoke-session.mjs         # Typed end-to-end session: start → turns → read-back → review
 │   ├── probe-evon-space.mjs      # Checks the community Evon demo on Hugging Face
 │   └── test-wav-pipeline.ts      # Verifies browser WAV encoding against Prisma
 └── src/
     ├── app/
     │   ├── page.tsx              # Start screen: choose form + language
+    │   ├── session/page.tsx      # Live voice session
     │   ├── mic-check/page.tsx    # Voice loop without the reasoning model
-    │   └── api/                  # stt, tts, health, session/{start,turn,review}
-    ├── components/               # Session launcher, mic button, mic check, header
-    ├── hooks/                    # useVoiceRecorder, useSpeechPlayer
+    │   └── api/                  # stt, tts, health, session/{start,turn,readback,review}
+    ├── components/
+    │   └── session/              # Conversation, live form panel, review card, result view
+    ├── hooks/                    # useBoloSession (conversation loop), useVoiceRecorder, useSpeechPlayer
     └── lib/
         ├── gnani/                # Prisma + Timbre clients
         ├── engine/               # Turn engine: extraction, apply rules, question bank, review
@@ -184,6 +189,7 @@ npm run dev                     # http://localhost:3000
 ```bash
 npm test             # unit tests: validators, cross-field checks, turn rules
 npm run eval         # live turn-engine score on messy multilingual answers (needs npm run dev)
+npm run smoke        # typed end-to-end session incl. read-back and review (needs npm run dev)
 npm run spike        # live Timbre → Prisma round trip in Hindi and Kannada (+ Evon if configured)
 npm run test:audio   # browser WAV pipeline → /api/stt (needs npm run dev)
 npm run lint

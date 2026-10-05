@@ -12,6 +12,8 @@ export interface Recording {
 
 /** Prisma REST is ideal for clips ≤ 30 s. */
 const MAX_DURATION_MS = 30_000;
+/** Normalised level above which a chunk counts as speech (noise suppression keeps rooms well below). */
+const SPEECH_LEVEL = 0.08;
 
 interface Session {
   stream: MediaStream;
@@ -19,6 +21,17 @@ interface Session {
   node: AudioWorkletNode;
   chunks: Float32Array[];
   startedAt: number;
+  heardSpeechAt: number | null;
+  lastSpeechAt: number;
+}
+
+export interface RecorderOptions {
+  /** Called with the recording when the recorder stops itself (time limit, silence, no speech). */
+  onAutoStop?: (r: Recording | null) => void;
+  /** Stop this long after the speaker goes quiet. Off when undefined. */
+  silenceStopMs?: number;
+  /** Stop if no speech is heard at all within this time. Off when undefined. */
+  noSpeechTimeoutMs?: number;
 }
 
 function describeMicError(err: unknown): string {
@@ -30,18 +43,23 @@ function describeMicError(err: unknown): string {
   return "Could not start the microphone.";
 }
 
-export function useVoiceRecorder({ onAutoStop }: { onAutoStop?: (r: Recording | null) => void } = {}) {
+export function useVoiceRecorder({ onAutoStop, silenceStopMs, noSpeechTimeoutMs }: RecorderOptions = {}) {
   const [state, setState] = useState<RecorderState>("idle");
   const [level, setLevel] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [heardSpeech, setHeardSpeech] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const session = useRef<Session | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Bumped by cancel/unmount so a start() still awaiting the mic discards its stream. */
+  const generation = useRef(0);
   const onAutoStopRef = useRef(onAutoStop);
+  const limits = useRef({ silenceStopMs, noSpeechTimeoutMs });
   useEffect(() => {
     onAutoStopRef.current = onAutoStop;
-  }, [onAutoStop]);
+    limits.current = { silenceStopMs, noSpeechTimeoutMs };
+  }, [onAutoStop, silenceStopMs, noSpeechTimeoutMs]);
 
   const teardown = useCallback(() => {
     if (timer.current) clearInterval(timer.current);
@@ -70,8 +88,10 @@ export function useVoiceRecorder({ onAutoStop }: { onAutoStop?: (r: Recording | 
 
   const start = useCallback(async () => {
     if (session.current) return;
+    const gen = ++generation.current;
     setError(null);
     setElapsedMs(0);
+    setHeardSpeech(false);
     setState("starting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -79,6 +99,11 @@ export function useVoiceRecorder({ onAutoStop }: { onAutoStop?: (r: Recording | 
       });
       const context = new AudioContext();
       await context.audioWorklet.addModule("/worklets/pcm-recorder.js");
+      if (gen !== generation.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        void context.close();
+        return;
+      }
       const source = context.createMediaStreamSource(stream);
       const node = new AudioWorkletNode(context, "pcm-recorder");
       // Route through a muted gain so the graph is pulled without echoing the mic.
@@ -87,22 +112,36 @@ export function useVoiceRecorder({ onAutoStop }: { onAutoStop?: (r: Recording | 
       source.connect(node);
       node.connect(mute).connect(context.destination);
 
-      const s: Session = { stream, context, node, chunks: [], startedAt: performance.now() };
+      const now = performance.now();
+      const s: Session = { stream, context, node, chunks: [], startedAt: now, heardSpeechAt: null, lastSpeechAt: now };
       node.port.onmessage = (e: MessageEvent<Float32Array>) => {
         s.chunks.push(e.data);
         let sum = 0;
         for (let i = 0; i < e.data.length; i++) sum += e.data[i] * e.data[i];
-        setLevel(Math.min(1, Math.sqrt(sum / e.data.length) * 4));
+        const value = Math.min(1, Math.sqrt(sum / e.data.length) * 4);
+        setLevel(value);
+        if (value >= SPEECH_LEVEL) {
+          s.lastSpeechAt = performance.now();
+          if (s.heardSpeechAt === null) {
+            s.heardSpeechAt = s.lastSpeechAt;
+            setHeardSpeech(true);
+          }
+        }
       };
       session.current = s;
       setState("recording");
 
       timer.current = setInterval(() => {
-        const elapsed = performance.now() - s.startedAt;
+        const t = performance.now();
+        const elapsed = t - s.startedAt;
         setElapsedMs(elapsed);
-        if (elapsed >= MAX_DURATION_MS) onAutoStopRef.current?.(finish());
-      }, 200);
+        const { silenceStopMs: silence, noSpeechTimeoutMs: noSpeech } = limits.current;
+        const quietTooLong = silence !== undefined && s.heardSpeechAt !== null && t - s.lastSpeechAt >= silence;
+        const nothingHeard = noSpeech !== undefined && s.heardSpeechAt === null && elapsed >= noSpeech;
+        if (elapsed >= MAX_DURATION_MS || quietTooLong || nothingHeard) onAutoStopRef.current?.(finish());
+      }, 150);
     } catch (err) {
+      if (gen !== generation.current) return;
       teardown();
       setError(describeMicError(err));
       setState("error");
@@ -112,12 +151,19 @@ export function useVoiceRecorder({ onAutoStop }: { onAutoStop?: (r: Recording | 
   const stop = useCallback(() => finish(), [finish]);
 
   const cancel = useCallback(() => {
+    generation.current++;
     teardown();
     setLevel(0);
     setState("idle");
   }, [teardown]);
 
-  useEffect(() => () => void teardown(), [teardown]);
+  useEffect(
+    () => () => {
+      generation.current++;
+      teardown();
+    },
+    [teardown],
+  );
 
-  return { state, level, elapsedMs, error, start, stop, cancel, maxDurationMs: MAX_DURATION_MS };
+  return { state, level, elapsedMs, heardSpeech, error, start, stop, cancel, maxDurationMs: MAX_DURATION_MS };
 }

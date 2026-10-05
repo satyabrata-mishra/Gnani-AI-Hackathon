@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -158,17 +159,27 @@ export function SessionLauncher({ servicesReady }: { servicesReady: boolean }) {
         </AnimatePresence>
 
         <div className="mt-6 space-y-2">
-          <button
-            type="button"
-            disabled
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 font-medium text-white transition enabled:hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Start voice session
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </button>
+          {servicesReady ? (
+            <Link
+              href={`/session?form=${form.id}&lang=${language.id}`}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 font-medium text-white transition hover:bg-brand-strong"
+            >
+              Start voice session
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 font-medium text-white opacity-50"
+            >
+              Start voice session
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </button>
+          )}
           <p className="text-center text-xs text-ink-faint">
             {servicesReady
-              ? "Voice session is the next milestone."
+              ? "Uses your microphone. Demo with made-up details only."
               : "Add your Gnani key and a reasoning model (Evon or Gemini) to .env.local to enable sessions."}
           </p>
         </div>
