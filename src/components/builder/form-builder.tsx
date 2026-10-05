@@ -178,7 +178,7 @@ export function FormBuilder({ editId, canDraft }: { editId?: string; canDraft: b
       )}
 
       <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
-        <div className="grid gap-3 sm:grid-cols-[1fr_1fr]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr]">
           <label className="text-xs font-medium text-ink-soft">
             Form title
             <input

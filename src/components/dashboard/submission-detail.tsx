@@ -105,7 +105,8 @@ export function SubmissionDetail({ id }: { id: string }) {
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
           <FormIcon icon={s.template.icon} className="h-6 w-6" />
         </span>
-        <div className="min-w-0 flex-1">
+        {/* The min width pushes the actions onto their own line on phones instead of squeezing the title. */}
+        <div className="min-w-48 flex-1">
           <h1 className="font-display text-3xl tracking-tight text-ink">{headline(s)}</h1>
           <p className="mt-1 text-sm text-ink-soft">
             {s.template.title} · answered in {language?.name ?? s.languageId} · {formatWhen(s.createdAt)}

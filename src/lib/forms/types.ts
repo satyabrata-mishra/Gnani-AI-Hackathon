@@ -8,7 +8,7 @@ export type FieldType =
   | "choice"
   | "yesno";
 
-export type FormIconName = "sprout" | "car" | "landmark" | "clipboard" | "heart" | "home" | "graduation";
+export type FormIconName = "sprout" | "car" | "landmark" | "wallet" | "clipboard" | "heart" | "home" | "graduation";
 
 export interface FormField {
   key: string;

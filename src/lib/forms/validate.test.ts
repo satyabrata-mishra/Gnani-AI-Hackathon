@@ -52,29 +52,28 @@ describe("validateField", () => {
   });
 
   it("parses rupee amounts", () => {
-    const income = field("loan-application", "monthly_income");
-    assert.equal(accepted(income, "₹45,000"), 45000);
-    assert.equal(accepted(income, "Rs 45000"), 45000);
-    const loan = field("loan-application", "loan_amount");
-    assert.equal(rejected(loan, "5000"), "out_of_range");
+    const emi = field("emi-follow-up", "emi_amount");
+    assert.equal(accepted(emi, "₹4,500"), 4500);
+    assert.equal(accepted(emi, "Rs 4500"), 4500);
+    assert.equal(rejected(emi, "200"), "out_of_range");
   });
 
   it("rejects impossible and future dates", () => {
-    const incident = field("motor-claim", "incident_date");
-    assert.equal(accepted(incident, "2026-10-02"), "2026-10-02");
-    assert.equal(rejected(incident, "2026-02-30"), "invalid_date");
-    assert.equal(rejected(incident, "2026-10-04"), "future_date");
-    assert.equal(rejected(incident, "02/10/2026"), "invalid_date");
+    const dob = field("account-opening", "date_of_birth");
+    assert.equal(accepted(dob, "1990-08-15"), "1990-08-15");
+    assert.equal(rejected(dob, "1990-02-30"), "invalid_date");
+    assert.equal(rejected(dob, "2026-10-04"), "future_date");
+    assert.equal(rejected(dob, "15/08/1990"), "invalid_date");
   });
 
   it("maps choices and yes/no answers to canonical values", () => {
-    const occupation = field("loan-application", "occupation");
+    const occupation = field("account-opening", "occupation");
     assert.equal(accepted(occupation, "salaried"), "Salaried");
     assert.equal(rejected(occupation, "Astronaut"), "not_an_option");
-    const injuries = field("motor-claim", "injuries");
-    assert.equal(accepted(injuries, "no"), false);
-    assert.equal(accepted(injuries, "Haan"), true);
-    assert.equal(rejected(injuries, "maybe"), "not_yes_no");
+    const consent: FormField = { key: "consent", label: "Consent", type: "yesno", required: true, hint: "" };
+    assert.equal(accepted(consent, "no"), false);
+    assert.equal(accepted(consent, "Haan"), true);
+    assert.equal(rejected(consent, "maybe"), "not_yes_no");
   });
 
   it("rejects empty values", () => {
@@ -88,19 +87,30 @@ describe("crossFieldIssues", () => {
     assert.equal(ageOn("1990-10-04", TODAY), 35);
   });
 
-  it("flags age that contradicts date of birth", () => {
-    const issues = crossFieldIssues("loan-application", { age: 25, date_of_birth: "1990-01-15" }, TODAY);
+  it("blocks a minor from opening an account alone", () => {
+    const issues = crossFieldIssues("account-opening", { date_of_birth: "2012-01-15" }, TODAY);
     assert.equal(issues.length, 1);
-    assert.deepEqual(issues[0].keys, ["age", "date_of_birth"]);
+    assert.deepEqual(issues[0].keys, ["date_of_birth"]);
     assert.equal(issues[0].severity, "error");
   });
 
-  it("accepts consistent age and date of birth", () => {
-    assert.deepEqual(crossFieldIssues("loan-application", { age: 36, date_of_birth: "1990-01-15" }, TODAY), []);
+  it("accepts an adult applicant with a separate nominee", () => {
+    const values = { full_name: "Anita Ghosh", date_of_birth: "1990-01-15", nominee_name: "Rahul Ghosh", nominee_relation: "Spouse" };
+    assert.deepEqual(crossFieldIssues("account-opening", values, TODAY), []);
   });
 
-  it("warns on injuries without a police report", () => {
-    const issues = crossFieldIssues("motor-claim", { injuries: true, police_report: false }, TODAY);
-    assert.equal(issues[0]?.severity, "warning");
+  it("rejects the account holder as their own nominee", () => {
+    const issues = crossFieldIssues("account-opening", { full_name: "Anita Ghosh", nominee_name: "anita ghosh", nominee_relation: "Other" }, TODAY);
+    assert.deepEqual(issues.map((i) => i.severity), ["error"]);
+  });
+
+  it("warns on a payment that covers less than one EMI", () => {
+    const issues = crossFieldIssues("emi-follow-up", { emi_amount: 4500, missed_emis: 2, pay_amount: 2000 }, TODAY);
+    assert.deepEqual(issues.map((i) => i.keys), [["pay_amount", "emi_amount"]]);
+    assert.equal(issues[0].severity, "warning");
+  });
+
+  it("accepts a full overdue payment within a month", () => {
+    assert.deepEqual(crossFieldIssues("emi-follow-up", { emi_amount: 4500, missed_emis: 2, pay_amount: 9000, pay_in_days: 7 }, TODAY), []);
   });
 });

@@ -37,29 +37,33 @@ const CASES = [
     say: "ನಾನು ರಾಗಿ ಬೆಳೆಯುತ್ತೇನೆ", expect: { main_crop: ["ragi", "finger millet"] } },
   { name: "Kannada district", form: "farmer-enrolment", lang: "kn", ask: "district",
     say: "ನಮ್ಮದು ಮಂಡ್ಯ ಜಿಲ್ಲೆ", expect: { district: "Mandya" } },
-  { name: "Relative date: kal", form: "motor-claim", lang: "hinglish", ask: "incident_date",
-    say: "कल शाम को हुआ था", expect: { incident_date: istDate(-1) } },
-  { name: "Hindi no -> false", form: "motor-claim", lang: "hinglish", ask: "injuries",
-    say: "नहीं, किसी को चोट नहीं लगी", expect: { injuries: false } },
-  { name: "Tamil yes + English FIR", form: "motor-claim", lang: "ta", ask: "police_report",
-    say: "ஆமாம், FIR போட்டோம்", expect: { police_report: true } },
-  { name: "Pachaas hazaar", form: "motor-claim", lang: "hinglish", ask: "estimated_damage",
-    say: "लगभग पचास हज़ार रुपये लगेंगे", expect: { estimated_damage: 50000 } },
-  { name: "Hinglish incident description", form: "motor-claim", lang: "hinglish", ask: "description",
-    say: "Meri bike ko signal pe peeche se ek auto ne thok diya", expect: { description: "*" } },
-  { name: "Paintalis hazaar income", form: "loan-application", lang: "hinglish", ask: "monthly_income",
-    say: "mahine ka paintalis hazaar milta hai", expect: { monthly_income: 45000 } },
-  { name: "Dhai lakh loan", form: "loan-application", lang: "hinglish", ask: "loan_amount",
-    say: "dhai lakh chahiye", expect: { loan_amount: 250000 } },
-  { name: "Occupation mapped to option", form: "loan-application", lang: "hinglish", ask: "occupation",
+  { name: "Relative promise: parso", form: "emi-follow-up", lang: "hinglish", ask: "pay_in_days",
+    say: "parso tak pakka kar dunga", expect: { pay_in_days: 2 } },
+  { name: "Delay reason mapped to option", form: "emi-follow-up", lang: "hinglish", ask: "delay_reason",
+    say: "इस महीने salary late आई, इसलिए नहीं भर पाया", expect: { delay_reason: "Salary delayed" } },
+  { name: "Tamil medical reason", form: "emi-follow-up", lang: "ta", ask: "delay_reason",
+    say: "அம்மாவுக்கு ஆஸ்பத்திரி செலவு ஆயிடுச்சு", expect: { delay_reason: "Medical emergency" } },
+  { name: "Saadhe chaar hazaar EMI", form: "emi-follow-up", lang: "hinglish", ask: "emi_amount",
+    say: "EMI साढ़े चार हज़ार की है", expect: { emi_amount: 4500 } },
+  { name: "Do mahine = 2 EMIs", form: "emi-follow-up", lang: "hinglish", ask: "missed_emis",
+    say: "do mahine se nahi bhara", expect: { missed_emis: 2 } },
+  { name: "GPay -> UPI", form: "emi-follow-up", lang: "hinglish", ask: "payment_mode",
+    say: "main GPay se kar dunga", expect: { payment_mode: "UPI" } },
+  { name: "Bike loan -> Two-wheeler", form: "emi-follow-up", lang: "hinglish", ask: "loan_type",
+    say: "bike ke liye loan liya tha", expect: { loan_type: "Two-wheeler loan" } },
+  { name: "Below minimum -> code rejects", form: "emi-follow-up", lang: "hinglish", ask: "emi_amount",
+    say: "do sau rupaye ki EMI hai", absent: ["emi_amount"], kind: "retry" },
+  { name: "Monthly income x 12", form: "account-opening", lang: "hinglish", ask: "annual_income",
+    say: "mahine ka paintalis hazaar milta hai", expect: { annual_income: 540000 } },
+  { name: "Occupation mapped to option", form: "account-opening", lang: "hinglish", ask: "occupation",
     say: "main ek private company mein naukri karta hoon", expect: { occupation: "Salaried" } },
-  { name: "Telugu city", form: "loan-application", lang: "te", ask: "city",
+  { name: "Telugu city", form: "account-opening", lang: "te", ask: "city",
     say: "నేను హైదరాబాద్‌లో ఉంటాను", expect: { city: "Hyderabad" } },
-  { name: "Bengali name", form: "loan-application", lang: "bn", ask: "full_name",
+  { name: "Bengali name", form: "account-opening", lang: "bn", ask: "full_name",
     say: "আমার নাম অনিতা ঘোষ", expect: { full_name: "Anita Ghosh" } },
-  { name: "Below minimum -> code rejects", form: "loan-application", lang: "hinglish", ask: "loan_amount",
-    say: "bas paanch hazaar chahiye", absent: ["loan_amount"], kind: "retry" },
-  { name: "Marathi date of birth", form: "loan-application", lang: "mr", ask: "date_of_birth",
+  { name: "Nominee wife -> Spouse", form: "account-opening", lang: "hinglish", ask: "nominee_relation",
+    say: "meri wife hai", expect: { nominee_relation: "Spouse" } },
+  { name: "Marathi date of birth", form: "account-opening", lang: "mr", ask: "date_of_birth",
     say: "माझा जन्म पंधरा ऑगस्ट एकोणीसशे नव्याण्णव ला झाला", expect: { date_of_birth: "1999-08-15" } },
 ];
 
@@ -146,21 +150,21 @@ async function main() {
   console.log(`\nScore: ${passed}/${CASES.length} passed`);
   console.log(`Model latency per turn: median ${pct(50)}ms, p90 ${pct(90)}ms`);
 
-  console.log("\nReview check (age contradicts date of birth):");
+  console.log("\nReview check (applicant is a minor):");
   try {
-    const base = await baseState("loan-application", "hinglish");
+    const base = await baseState("account-opening", "hinglish");
     const review = await post("/api/session/review", {
       state: {
         ...base,
         values: {
           full_name: filled("Rahul Verma"),
-          date_of_birth: filled("1990-01-15"),
-          age: filled(25, "25 years"),
-          occupation: filled("Salaried"),
-          monthly_income: filled(45000, "₹45,000"),
-          loan_amount: filled(250000, "₹2,50,000"),
-          loan_purpose: filled("Sister's wedding"),
+          date_of_birth: filled(istDate(-16 * 365)),
+          occupation: filled("Student"),
+          annual_income: filled(0, "₹0"),
           city: filled("Lucknow"),
+          pincode: filled("226001"),
+          nominee_name: filled("Sunita Verma"),
+          nominee_relation: filled("Mother"),
           mobile: filled("9876543210", "98765 43210"),
         },
         current: null,
@@ -170,8 +174,8 @@ async function main() {
     console.log(`  ${review.meta.latencyMs}ms (${review.meta.model})`);
     console.log(`  summary: ${review.summary}`);
     for (const i of review.issues) console.log(`  [${i.source}/${i.severity}] ${i.keys.join(", ")}: ${i.message}`);
-    const caught = review.issues.some((i) => i.source === "rules" && i.keys.includes("age"));
-    console.log(`  ${caught ? "PASS" : "FAIL"}  rule check caught the age mismatch`);
+    const caught = review.issues.some((i) => i.source === "rules" && i.keys.includes("date_of_birth"));
+    console.log(`  ${caught ? "PASS" : "FAIL"}  rule check caught the minor`);
   } catch (err) {
     console.log(`  ERROR ${err.message}`);
   }

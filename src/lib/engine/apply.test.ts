@@ -23,7 +23,7 @@ function answered(...updates: Extraction["updates"]): Extraction {
 }
 
 const farmer = template("farmer-enrolment");
-const claim = template("motor-claim");
+const account = template("account-opening");
 
 function bankFor(t: FormTemplate): QuestionBank {
   return {
@@ -92,11 +92,11 @@ describe("applyExtraction", () => {
   });
 
   it("skips a declined optional field", () => {
-    const start = askedState(claim, "estimated_damage");
-    const { state, events } = applyExtraction(claim, start, { status: "declined", updates: [], reply: null }, "pata nahi", TODAY);
-    assert.ok(state.skipped.includes("estimated_damage"));
+    const start = askedState(account, "nominee_name");
+    const { state, events } = applyExtraction(account, start, { status: "declined", updates: [], reply: null }, "abhi nahi", TODAY);
+    assert.ok(state.skipped.includes("nominee_name"));
     assert.ok(events.some((e) => e.type === "skipped"));
-    assert.notEqual(state.current?.key, "estimated_damage");
+    assert.notEqual(state.current?.key, "nominee_name");
   });
 
   it("gives up on a field after the maximum attempts and flags it", () => {

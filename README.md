@@ -22,7 +22,7 @@
 
 ### Quick start for judges
 
-1. Open the app, pick a form (farmer enrolment, motor insurance claim, or personal loan) and the citizen's language, and press **Start voice session**.
+1. Open the app, pick a form (farmer enrolment, EMI repayment follow-up, or savings account opening) and the citizen's language, and press **Start voice session**.
 2. Answer each question aloud. Bolo stops listening when you pause, fills the form live, reads everything back, and lets you fix any field by voice before confirming.
 3. The result screen shows the English record, with a play button for the recording behind each field and a JSON download.
 4. Open **Create a form**, describe any form in a sentence (or dictate it in Hinglish), adjust the drafted fields, and start a voice session on it straight away.

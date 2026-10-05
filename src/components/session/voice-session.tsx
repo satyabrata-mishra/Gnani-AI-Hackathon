@@ -42,7 +42,7 @@ export function VoiceSession({
 
   // Phones stack the active step, then the live form, then the history; desktop keeps the form beside both.
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:grid-rows-[auto_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr] lg:grid-rows-[auto_1fr]">
       <div className="min-w-0 lg:col-start-1 lg:row-start-1">
         {phase === "ready" ? (
           <Intro template={template} language={language} onStart={session.begin} />

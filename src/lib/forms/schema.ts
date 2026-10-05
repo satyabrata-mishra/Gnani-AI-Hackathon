@@ -4,7 +4,7 @@ import type { FieldType, FormField, FormIconName, FormTemplate } from "./types";
 // Pure: shared by the builder UI, the API routes and `node --test`.
 
 export const FIELD_TYPES = ["text", "number", "currency", "date", "phone", "pincode", "choice", "yesno"] as const satisfies readonly FieldType[];
-export const FORM_ICONS = ["clipboard", "sprout", "car", "landmark", "heart", "home", "graduation"] as const satisfies readonly FormIconName[];
+export const FORM_ICONS = ["clipboard", "sprout", "car", "landmark", "wallet", "heart", "home", "graduation"] as const satisfies readonly FormIconName[];
 
 export const CUSTOM_PREFIX = "custom-";
 export const MAX_FIELDS = 15;

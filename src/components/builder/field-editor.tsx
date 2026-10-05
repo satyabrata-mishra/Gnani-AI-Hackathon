@@ -99,7 +99,7 @@ export function FieldEditor({
         </div>
       </div>
 
-      <div className="mt-3 grid gap-2 pl-7">
+      <div className="mt-3 grid grid-cols-1 gap-2 pl-7">
         {field.type === "choice" && (
           <OptionsInput options={field.options ?? []} onChange={(options) => onChange({ options })} />
         )}

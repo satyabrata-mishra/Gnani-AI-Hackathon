@@ -101,13 +101,13 @@ export function SessionLauncher({ servicesReady }: { servicesReady: boolean }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr]">
       <div className="space-y-8">
         <section aria-labelledby="choose-form">
           <h2 id="choose-form" className="mb-3 text-sm font-medium text-ink-soft">
             <span className="mr-2 font-mono text-ink-faint">01</span>Choose a form
           </h2>
-          <div role="radiogroup" aria-labelledby="choose-form" className="grid gap-2">
+          <div role="radiogroup" aria-labelledby="choose-form" className="grid grid-cols-1 gap-2">
             {FORM_TEMPLATES.map((f) => (
               <FormOption key={f.id} form={f} selected={f.id === form.id} onSelect={() => setFormId(f.id)} />
             ))}

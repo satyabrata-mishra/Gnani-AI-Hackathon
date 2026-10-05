@@ -9,7 +9,7 @@ export function CheckSummary({ issues }: { issues: Issue[] }) {
   const rules = issues.filter((i) => i.source === "rules");
   const model = issues.filter((i) => i.source === "model");
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       <CheckCell
         icon={<ShieldCheck className="h-4 w-4" aria-hidden />}
         title="Rule checks"
