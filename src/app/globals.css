@@ -23,7 +23,7 @@
 }
 
 @theme inline {
-  /* Indic scripts fall back to Nirmala UI (Windows) / Noto Sans (Android, macOS). */
+  /* Geist has no Indic glyphs: Windows falls back to Nirmala UI, phones and Macs to their system Indic fonts. */
   --font-sans: var(--font-geist-sans), "Nirmala UI", "Noto Sans", system-ui, sans-serif;
   --font-display: var(--font-instrument-serif), Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -42,6 +42,11 @@ body {
 ::selection {
   background: var(--color-brand-soft);
   color: var(--color-brand-strong);
+}
+
+/* Indic scripts have no italics, and the browser's synthetic slant distorts them. */
+[lang]:not(:lang(en)) {
+  font-synthesis-style: none;
 }
 
 /* iOS Safari zooms the page when a field under 16px takes focus. */

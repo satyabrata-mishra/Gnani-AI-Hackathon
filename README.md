@@ -16,10 +16,10 @@ Bolo turns any enterprise form into a **voice conversation in 11 Indian language
 | --- | --- |
 | 🖥️ Live demo | **[bolo1.netlify.app](https://bolo1.netlify.app)** |
 | 🧠 Source code | [github.com/satyabrata-mishra/Gnani-AI-Hackathon](https://github.com/satyabrata-mishra/Gnani-AI-Hackathon) |
-| 🎬 Demo video (60 s) | _Coming soon_ |
-| 📣 LinkedIn / X post | _Coming soon_ |
+| 🎬 Demo video | _Coming soon_ |
+| 📣 LinkedIn post | _Coming soon_ |
 | 🧩 Gnani models used | **Prisma v2.5** (speech-to-text) · **Timbre v2.5** (text-to-speech) · **Evon v3.3** (reasoning; Gemini stands in until a hosted Evon endpoint is available) |
-| 👤 Author | Satyabrata Mishra · solo entry |
+| 👤 Author | Satyabrata Mishra |
 
 ---
 
