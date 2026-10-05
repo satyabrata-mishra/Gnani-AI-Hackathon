@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { toErrorResponse } from "@/lib/errors";
 import { draftForm } from "@/lib/forms/draft";
+import { limitRequest } from "@/lib/rate-limit";
 
 const Body = z.object({ description: z.string().trim().min(10).max(1500) });
 
 export async function POST(req: Request) {
+  const limited = limitRequest(req, "draft");
+  if (limited) return limited;
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return Response.json(

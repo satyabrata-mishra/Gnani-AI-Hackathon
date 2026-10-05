@@ -124,6 +124,8 @@ export async function extractAnswer(args: {
       ],
       jsonSchema: { name: "extraction", schema: jsonSchemaFor(args.template) },
       maxTokens: 1024,
+      // Turns normally take 1–3 s; a hung call should fall over to the other model, not stall the citizen.
+      timeoutMs: 20_000,
     },
     extractionSchema,
   );

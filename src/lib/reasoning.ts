@@ -33,7 +33,7 @@ const THINK_BLOCK = /<think>([\s\S]*?)<\/think>/i;
 function buildBody(config: ReasoningConfig, input: ReasonInput): Record<string, unknown> {
   const { messages, thinking = false, jsonSchema, maxTokens = 1024, temperature } = input;
   const body: Record<string, unknown> = {
-    model: thinking ? config.reviewModel : config.model,
+    model: config.model,
     messages,
     max_tokens: maxTokens,
   };
@@ -57,7 +57,7 @@ function buildBody(config: ReasoningConfig, input: ReasonInput): Record<string, 
   return body;
 }
 
-function post(config: ReasoningConfig, body: Record<string, unknown>, timeoutMs: number) {
+function post(config: ReasoningConfig, body: Record<string, unknown>, timeoutMs: number, retries: number) {
   return fetchWithRetry(
     `${config.baseUrl}/chat/completions`,
     {
@@ -68,7 +68,7 @@ function post(config: ReasoningConfig, body: Record<string, unknown>, timeoutMs:
       },
       body: JSON.stringify(body),
     },
-    { retries: 2, baseDelayMs: 1500, timeoutMs },
+    { retries, baseDelayMs: 1500, timeoutMs },
   );
 }
 
@@ -78,14 +78,24 @@ export async function reason(input: ReasonInput): Promise<ReasonResult> {
   const timeoutMs = input.timeoutMs ?? 45_000;
 
   const started = performance.now();
-  let res = await post(config, body, timeoutMs);
+  // Gemini's free tier sheds load (503), meters quota (429) per model and occasionally hangs.
+  // With a backup model, switch at once rather than retrying a model that is already struggling.
+  const { fallbackModel } = config;
+  const canFallBack = fallbackModel !== body.model;
+  const retries = canFallBack ? 0 : 2;
 
-  // Gemini's free tier sheds load per model ("high demand"); the other configured model usually still answers.
-  const fallbackModel = body.model === config.model ? config.reviewModel : config.model;
-  if (res.status === 503 && fallbackModel !== body.model) {
+  let res: Response;
+  try {
+    res = await post(config, body, timeoutMs, retries);
+  } catch (err) {
+    if (!canFallBack || !(err instanceof Error && err.name === "TimeoutError")) throw err;
+    body.model = fallbackModel;
+    res = await post(config, body, timeoutMs, 2);
+  }
+  if ((res.status === 503 || res.status === 429) && canFallBack && body.model !== fallbackModel) {
     await res.body?.cancel();
     body.model = fallbackModel;
-    res = await post(config, body, timeoutMs);
+    res = await post(config, body, timeoutMs, 2);
   }
   const latencyMs = Math.round(performance.now() - started);
 

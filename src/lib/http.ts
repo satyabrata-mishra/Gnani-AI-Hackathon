@@ -1,16 +1,23 @@
 import "server-only";
 
-const RETRYABLE = new Set([429, 503]);
+const RETRYABLE = [429, 503];
 
-/** Retries 429/503 with backoff, honouring `retry-after` when present. */
+export interface RetryOptions {
+  retries?: number;
+  baseDelayMs?: number;
+  timeoutMs?: number;
+  retryOn?: readonly number[];
+}
+
+/** Retries 429/503 (or `retryOn`) with backoff, honouring `retry-after` when present. */
 export async function fetchWithRetry(
   url: string,
   init: RequestInit,
-  { retries = 2, baseDelayMs = 800, timeoutMs = 30_000 } = {},
+  { retries = 2, baseDelayMs = 800, timeoutMs = 30_000, retryOn = RETRYABLE }: RetryOptions = {},
 ): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
-    if (!RETRYABLE.has(res.status) || attempt >= retries) return res;
+    if (!retryOn.includes(res.status) || attempt >= retries) return res;
     const retryAfter = Number(res.headers.get("retry-after"));
     const delay = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : baseDelayMs * 2 ** attempt;
     await res.body?.cancel();

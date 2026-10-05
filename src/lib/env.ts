@@ -19,10 +19,10 @@ export interface ReasoningConfig {
   label: string;
   baseUrl: string;
   apiKey?: string;
-  /** Used for conversational turns (latency matters). */
+  /** Used for every call; reviews get more reasoning effort, not a different model. */
   model: string;
-  /** Used for the end-of-form review (accuracy matters). */
-  reviewModel: string;
+  /** Tried once when `model` is overloaded, rate-limited or hangs. Same as `model` when there is no backup. */
+  fallbackModel: string;
   sendChatTemplateKwargs: boolean;
 }
 
@@ -52,7 +52,7 @@ export function getReasoningConfig(): ReasoningConfig {
       baseUrl: baseUrl.replace(/\/$/, ""),
       apiKey: process.env.EVON_API_KEY || undefined,
       model,
-      reviewModel: model,
+      fallbackModel: model,
       sendChatTemplateKwargs: process.env.EVON_SEND_CHAT_TEMPLATE_KWARGS !== "false",
     };
   }
@@ -69,7 +69,8 @@ export function getReasoningConfig(): ReasoningConfig {
       baseUrl: GEMINI_OPENAI_BASE_URL,
       apiKey,
       model,
-      reviewModel: process.env.GEMINI_REVIEW_MODEL || "gemini-3.8-flash",
+      // GEMINI_REVIEW_MODEL is the old name for this setting.
+      fallbackModel: process.env.GEMINI_FALLBACK_MODEL || process.env.GEMINI_REVIEW_MODEL || "gemini-3.8-flash",
       sendChatTemplateKwargs: false,
     };
   }

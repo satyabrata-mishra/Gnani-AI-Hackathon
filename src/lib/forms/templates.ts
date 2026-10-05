@@ -13,7 +13,7 @@ export const FORM_TEMPLATES: FormTemplate[] = [
       { key: "village", label: "Village", type: "text", required: true, hint: "Village or town name." },
       { key: "district", label: "District", type: "text", required: true, hint: "District name." },
       { key: "pincode", label: "PIN code", type: "pincode", required: true, hint: "6-digit Indian PIN code." },
-      { key: "land_acres", label: "Land holding", type: "number", required: true, hint: "Cultivable land in acres. Convert fractions like 'dhai' (2.5) or 'sava do' (2.25).", min: 0, max: 500, unit: "acres" },
+      { key: "land_acres", label: "Land holding", type: "number", required: true, hint: "Cultivable land in acres. Convert fractions like 'dhai' (2.5) or 'sava do' (2.25).", min: 0, max: 100, unit: "acres" },
       { key: "main_crop", label: "Main crop", type: "text", required: true, hint: "Primary crop grown, in English (e.g. paddy, ragi, sugarcane)." },
       { key: "mobile", label: "Mobile number", type: "phone", required: true, hint: "10-digit Indian mobile number starting with 6-9." },
     ],

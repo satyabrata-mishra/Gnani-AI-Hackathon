@@ -130,7 +130,8 @@ Bolo is a turn-based loop where **the model proposes and code decides**: Evon ex
 ### 🧩 How the pieces fit
 
 - 🔐 **Server-only API routes** (`/api/stt`, `/api/tts`, `/api/session/*`, `/api/health`) hold the keys; the browser never sees credentials.
-- 🔁 **Resilient clients** retry rate limits (429) and outages (503) with backoff and surface the provider's own error messages.
+- 🔁 **Resilient clients** retry rate limits (429) and outages (503) with backoff; when Gemini sheds load or meters quota on one model, the other configured model answers instead.
+- 🚧 **Per-visitor limits** on every paid API route protect the public demo's quotas (on in production, `RATE_LIMIT=on|off` to override). Visitors who hit a limit, or arrive while an upstream service is busy, get a plain-language "try again in a minute" message. Counters are in memory, so each serverless instance counts separately.
 - 🧠 **One OpenAI-compatible reasoning interface** — Evon on vLLM, SGLang or llama.cpp, or Gemini as the stand-in, selected by `.env.local`; no code changes.
 - 🗂️ **Stateless sessions** — the browser holds the session state and sends it with each turn; the server re-validates every value before the final review.
 - 🌐 **Language catalogue** maps each language to Prisma and Timbre codes, a matched voice, and a reply style for Evon. Spoken lines are checked for the language's native script and regenerated once if the model drifts into Roman letters.

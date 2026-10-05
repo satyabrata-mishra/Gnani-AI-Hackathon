@@ -40,9 +40,10 @@ export function VoiceSession({
   const activeKey = ASKING.includes(phase) ? (state?.current?.key ?? prompt?.key ?? null) : null;
   const inReview = phase === "reviewing" || phase === "confirmed";
 
+  // Phones stack the active step, then the live form, then the history; desktop keeps the form beside both.
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
-      <div className="min-w-0 space-y-6">
+    <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:grid-rows-[auto_1fr]">
+      <div className="min-w-0 lg:col-start-1 lg:row-start-1">
         {phase === "ready" ? (
           <Intro template={template} language={language} onStart={session.begin} />
         ) : phase === "confirmed" ? (
@@ -52,11 +53,9 @@ export function VoiceSession({
         ) : (
           <Conversation session={session} language={language} />
         )}
-
-        {phase !== "ready" && phase !== "confirmed" && <ConversationLog log={log} template={template} language={language} />}
       </div>
 
-      <div className="lg:sticky lg:top-6 lg:self-start">
+      <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-6 lg:self-start">
         <FormPanel
           template={template}
           state={state}
@@ -68,6 +67,12 @@ export function VoiceSession({
           onFix={phase === "reviewing" ? session.fixField : undefined}
         />
       </div>
+
+      {phase !== "ready" && phase !== "confirmed" && log.length > 0 && (
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2 lg:self-start">
+          <ConversationLog log={log} template={template} language={language} />
+        </div>
+      )}
     </div>
   );
 }
@@ -99,23 +104,27 @@ function Intro({ template, language, onStart }: { template: FormTemplate; langua
   );
 }
 
-function statusLine(session: BoloSession, language: Language): string {
+/** A short headline for the control plus one line of guidance; both change with the phase. */
+function micState(session: BoloSession, language: Language): { label: string; hint: string } {
   const { phase, recorder } = session;
   switch (phase) {
     case "preparing":
-      return `Preparing questions in ${language.name}…`;
+      return { label: "Getting ready", hint: `Writing the questions in ${language.name}. The first time takes a few seconds.` };
     case "speaking":
-      return "Bolo is speaking. Tap the mic to answer right away.";
+      return { label: "Bolo is speaking", hint: "Tap the speaker to answer without waiting." };
     case "listening":
-      if (recorder.state === "error") return recorder.error ?? "The microphone is unavailable.";
-      if (recorder.state === "starting") return "Starting the microphone…";
-      return recorder.heardSpeech ? "Listening… pause when you're done." : "Listening. Speak your answer.";
+      if (recorder.state === "error") return { label: "Microphone unavailable", hint: recorder.error ?? "Type your answer instead." };
+      if (recorder.state === "starting") return { label: "Starting microphone", hint: "One moment…" };
+      if (recorder.state !== "recording") return { label: "Your turn", hint: "Tap the microphone to answer." };
+      return recorder.heardSpeech
+        ? { label: "Listening", hint: "Pause when you're finished. Bolo stops listening on its own." }
+        : { label: "Listening", hint: "Speak your answer now." };
     case "transcribing":
-      return "Transcribing with Prisma…";
+      return { label: "Got it", hint: "Turning your speech into text…" };
     case "thinking":
-      return "Understanding your answer…";
+      return { label: "Checking your answer", hint: "Understanding and validating what you said…" };
     default:
-      return "";
+      return { label: "", hint: "" };
   }
 }
 
@@ -123,13 +132,18 @@ function Conversation({ session, language }: { session: BoloSession; language: L
   const { phase, prompt, recorder, player, error } = session;
   const [typing, setTyping] = useState(false);
   const [draft, setDraft] = useState("");
+  // Without a microphone, typing is the only way forward; keep it open for the rest of the session.
+  if (recorder.state === "error" && !typing) setTyping(true);
 
   const recording = phase === "listening" && recorder.state === "recording";
   const micMode: MicButtonMode = recording
     ? "recording"
-    : phase === "speaking" || (phase === "listening" && recorder.state !== "starting")
-      ? "idle"
-      : "busy";
+    : phase === "speaking"
+      ? "speaking"
+      : phase === "listening" && recorder.state !== "starting"
+        ? "idle"
+        : "busy";
+  const status = micState(session, language);
 
   function onMic() {
     if (recording) session.stopListening();
@@ -169,16 +183,16 @@ function Conversation({ session, language }: { session: BoloSession; language: L
   }
 
   return (
-    <section aria-live="polite" className="rounded-2xl border border-line bg-surface p-6 sm:p-8">
-      <div className="flex items-center justify-between gap-3">
+    <section aria-label="Current question" className="rounded-2xl border border-line bg-surface p-5 sm:p-8">
+      <div className="flex min-h-9 items-center justify-between gap-3">
         <p className="text-xs font-medium uppercase tracking-wider text-ink-faint">Step 1 of 2 · Bolo asks</p>
         {prompt && phase === "listening" && (
           <button
             type="button"
             onClick={session.repeatQuestion}
-            className="inline-flex items-center gap-1.5 text-xs text-brand transition hover:text-brand-strong"
+            className="-mr-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-brand transition hover:bg-brand-soft hover:text-brand-strong"
           >
-            <Volume2 className="h-3.5 w-3.5" aria-hidden />
+            <Volume2 className="h-4 w-4" aria-hidden />
             Repeat question
           </button>
         )}
@@ -192,7 +206,7 @@ function Conversation({ session, language }: { session: BoloSession; language: L
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.2 }}
-          className="mt-3 min-h-16 text-2xl leading-snug text-ink"
+          className="mt-2 min-h-20 text-2xl leading-[1.5] text-ink sm:text-[1.75rem]"
         >
           {prompt?.text ?? (
             <span className="flex items-center gap-2 text-base text-ink-faint">
@@ -203,33 +217,48 @@ function Conversation({ session, language }: { session: BoloSession; language: L
         </motion.p>
       </AnimatePresence>
 
-      <div className="mt-6 flex flex-col items-center gap-2">
+      <div className="mt-4 flex flex-col items-center">
         <MicButton mode={micMode} level={recorder.level} onClick={onMic} />
-        <p className={cn("min-h-5 text-center text-sm", recorder.state === "error" ? "text-danger" : "text-ink-soft")}>
-          {statusLine(session, language)}
-        </p>
-        {player.state === "error" && player.error && (
-          <p className="text-center text-xs text-warn">Audio didn&apos;t play ({player.error}). The question is shown above.</p>
+        <div role="status" aria-live="polite" aria-atomic="true" className="mt-1 min-h-12 text-center">
+          <p
+            className={cn(
+              "flex items-center justify-center gap-2 font-semibold",
+              recorder.state === "error" && phase === "listening" ? "text-danger" : recording ? "text-warn" : "text-ink",
+            )}
+          >
+            {recording && <span aria-hidden className="h-2 w-2 rounded-full bg-marigold motion-safe:animate-pulse" />}
+            {status.label}
+          </p>
+          <p className="mt-0.5 text-sm text-ink-soft">{status.hint}</p>
+        </div>
+        {player.state === "error" && (
+          <p className="mt-1 text-center text-xs text-warn" title={player.error ?? undefined}>
+            Bolo&apos;s voice couldn&apos;t play this time. The question is shown above.
+          </p>
         )}
       </div>
 
       <div className="mt-5 border-t border-line pt-4">
         {typing ? (
           <form onSubmit={submit} className="flex gap-2">
+            <label htmlFor="typed-answer" className="sr-only">
+              Your answer
+            </label>
             <input
+              id="typed-answer"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Type the answer…"
               lang={language.stt}
               disabled={!canType}
               autoFocus
-              className="min-w-0 flex-1 rounded-xl border border-line bg-paper px-3 py-2 text-sm text-ink outline-none transition focus:border-brand disabled:opacity-50"
+              className="min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-paper px-3 py-2 text-base text-ink outline-none transition focus:border-brand disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={!canType || !draft.trim()}
               aria-label="Send typed answer"
-              className="inline-flex items-center justify-center rounded-xl bg-brand px-3 text-white transition enabled:hover:bg-brand-strong disabled:opacity-50"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-brand px-3 text-white transition enabled:hover:bg-brand-strong disabled:opacity-50"
             >
               <SendHorizontal className="h-4 w-4" aria-hidden />
             </button>
@@ -238,10 +267,10 @@ function Conversation({ session, language }: { session: BoloSession; language: L
           <button
             type="button"
             onClick={() => setTyping(true)}
-            className="inline-flex items-center gap-2 text-sm text-ink-soft transition hover:text-ink"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-3.5 text-sm font-medium text-ink-soft transition hover:border-brand hover:text-brand"
           >
             <Keyboard className="h-4 w-4" aria-hidden />
-            Type instead
+            Type an answer instead
           </button>
         )}
       </div>
@@ -260,17 +289,17 @@ function ConversationLog({ log, template, language }: { log: LogEntry[]; templat
 
   return (
     <section aria-label="Conversation" className="rounded-2xl border border-line bg-surface">
-      <p className="border-b border-line px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-faint">Conversation</p>
+      <h2 className="border-b border-line px-5 py-3 text-xs font-medium uppercase tracking-wider text-ink-faint">Conversation</h2>
       <div ref={box} className="max-h-96 space-y-3 overflow-y-auto p-5">
         {log.map((entry) => (
           <div key={entry.id} className={cn("flex", entry.role === "user" ? "justify-end" : "justify-start")}>
             <div
               className={cn(
-                "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm",
+                "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-base",
                 entry.role === "user" ? "rounded-br-sm bg-brand text-white" : "rounded-bl-sm bg-paper text-ink",
               )}
             >
-              <p lang={language.stt} className="flex items-start gap-2 leading-relaxed">
+              <p lang={language.stt} className="flex items-start gap-2 leading-7">
                 {entry.audioUrl && <ClipButton url={entry.audioUrl} label="this answer" className="mt-px border-white/40 bg-white/10 text-white" />}
                 <span>{entry.text}</span>
               </p>
@@ -279,7 +308,7 @@ function ConversationLog({ log, template, language }: { log: LogEntry[]; templat
                   {entry.events.map((e, i) => {
                     const chip = describeEvent(e, labelOf);
                     return chip ? (
-                      <li key={i} className={cn("rounded-full px-2 py-0.5 text-[11px]", chip.bad ? "bg-white/90 text-danger" : "bg-white/20")}>
+                      <li key={i} className={cn("rounded-full px-2 py-0.5 text-xs", chip.bad ? "bg-white/90 text-danger" : "bg-white/20")}>
                         {chip.text}
                       </li>
                     ) : null;

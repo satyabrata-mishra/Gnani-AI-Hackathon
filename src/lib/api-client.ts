@@ -21,8 +21,24 @@ async function toApiError(res: Response): Promise<ApiError> {
   }
 }
 
+/** Browsers reject with a bare "Failed to fetch" TypeError when the network is down. */
+async function request(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    const offline = typeof navigator !== "undefined" && !navigator.onLine;
+    throw new ApiError(
+      offline
+        ? "You seem to be offline. Check your internet connection and try again."
+        : "Couldn't reach Bolo. Check your internet connection and try again.",
+      0,
+    );
+  }
+}
+
 async function postJson<T>(url: string, body: unknown): Promise<T> {
-  const res = await fetch(url, {
+  const res = await request(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -66,7 +82,7 @@ export async function transcribeAudio(blob: Blob, languageId: string): Promise<T
   const form = new FormData();
   form.append("audio", blob, "answer.wav");
   form.append("languageId", languageId);
-  const res = await fetch("/api/stt", { method: "POST", body: form });
+  const res = await request("/api/stt", { method: "POST", body: form });
   if (!res.ok) throw await toApiError(res);
   return res.json();
 }
@@ -78,7 +94,7 @@ export interface SpeechResponse {
 }
 
 export async function fetchSpeech(text: string, languageId: string): Promise<SpeechResponse> {
-  const res = await fetch("/api/tts", {
+  const res = await request("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text, languageId }),

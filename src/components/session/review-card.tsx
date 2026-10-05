@@ -1,25 +1,9 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, Loader2, RotateCcw, Volume2 } from "lucide-react";
-import { cn } from "@/lib/cn";
 import type { BoloSession } from "@/hooks/use-bolo-session";
 import type { FormTemplate } from "@/lib/forms/types";
-
-/** Keeps deterministic validation and the model's judgement visibly separate. */
-export function ChecksPassed() {
-  return (
-    <ul className="space-y-1 text-sm text-ok">
-      <li className="flex items-center gap-2">
-        <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
-        Rule checks passed: formats, ranges and the form&apos;s own rules
-      </li>
-      <li className="flex items-center gap-2">
-        <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
-        Model plausibility check found no issues
-      </li>
-    </ul>
-  );
-}
+import { CheckSummary, IssueList } from "../checks";
 
 export function ReviewCard({
   session,
@@ -53,21 +37,21 @@ export function ReviewCard({
               type="button"
               onClick={() => session.replay(readback)}
               disabled={player.state === "loading" || player.state === "speaking"}
-              className="inline-flex items-center gap-1.5 text-xs text-brand transition hover:text-brand-strong disabled:opacity-50"
+              className="-mr-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-brand transition hover:bg-brand-soft hover:text-brand-strong disabled:opacity-50"
             >
-              <Volume2 className="h-3.5 w-3.5" aria-hidden />
+              <Volume2 className="h-4 w-4" aria-hidden />
               Play again
             </button>
           )}
         </div>
         {readback ? (
-          <p lang={speechLang} className="leading-relaxed text-ink">
+          <p lang={speechLang} className="text-lg leading-[1.6] text-ink">
             {readback}
           </p>
         ) : readbackFailed ? (
-          <p className="text-sm text-ink-faint">The spoken read-back could not be generated. The form on the right is the full record.</p>
+          <p className="text-sm text-ink-soft">The spoken read-back could not be generated. The live form is the full record.</p>
         ) : (
-          <p className="flex items-center gap-2 text-sm text-ink-faint">
+          <p className="flex items-center gap-2 text-sm text-ink-soft">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Preparing the read-back…
           </p>
@@ -78,60 +62,56 @@ export function ReviewCard({
         <p className="mb-2 text-sm font-medium text-ink-soft">Checks</p>
         {review ? (
           <div className="space-y-3">
-            <div>
-              <p className="text-xs font-medium text-ink-faint">AI-generated summary · the form on the right is the record</p>
-              <p className="mt-1 text-sm leading-relaxed text-ink">{review.summary}</p>
-            </div>
+            <CheckSummary issues={review.issues} />
             {review.missing.length > 0 && (
               <p className="flex items-start gap-2 rounded-lg bg-marigold-soft px-3 py-2 text-sm text-warn">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 Missing: {review.missing.map(labelOf).join(", ")}
               </p>
             )}
-            {review.issues.length === 0 && review.missing.length === 0 ? (
-              <ChecksPassed />
-            ) : (
-              <ul className="space-y-2">
-                {review.issues.map((issue, i) => (
-                  <li
-                    key={i}
-                    className={cn(
-                      "rounded-lg border px-3 py-2 text-sm",
-                      issue.severity === "error" ? "border-danger/30 bg-danger-soft text-danger" : "border-marigold/40 bg-marigold-soft text-warn",
-                    )}
-                  >
-                    <span className="mr-2 rounded bg-white/70 px-1.5 py-0.5 font-mono text-[10px] uppercase">
-                      {issue.source === "rules" ? "rule" : "model"}
-                    </span>
-                    {issue.message}
-                    <span className="mt-0.5 block text-xs opacity-80">{issue.keys.map(labelOf).join(" · ")}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <IssueList issues={review.issues} labelOf={labelOf} />
+            <div>
+              <p className="text-xs font-medium text-ink-faint">AI-generated summary · the live form is the record</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-soft">{review.summary}</p>
+            </div>
           </div>
         ) : reviewError ? (
           <div className="flex items-center justify-between gap-3 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
             <span>Checks failed: {reviewError}</span>
-            <button type="button" onClick={session.retryReview} className="inline-flex items-center gap-1 font-medium">
+            <button
+              type="button"
+              onClick={session.retryReview}
+              className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 font-medium hover:bg-white/60"
+            >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden />
               Retry
             </button>
           </div>
         ) : (
-          <p className="flex items-center gap-2 text-sm text-ink-faint">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            Validating fields and asking {reasoningLabel} for a plausibility check…
-          </p>
+          <div role="status" className="flex items-start gap-3 rounded-xl border border-line bg-paper p-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            </span>
+            <div>
+              <p className="font-medium text-ink">Checking your answers</p>
+              <p className="mt-0.5 text-sm text-ink-soft">
+                Rules validate every field while {reasoningLabel} looks for answers that don&apos;t fit together. This
+                can take a few seconds.
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
       <div className="space-y-2 border-t border-line pt-5">
+        {!review && !reviewError && (
+          <p className="text-center text-sm text-ink-soft">You can confirm once the checks finish.</p>
+        )}
         <button
           type="button"
           onClick={session.confirm}
           disabled={!review}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 font-medium text-white transition enabled:hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 font-semibold text-white transition enabled:hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CheckCircle2 className="h-4 w-4" aria-hidden />
           {errors > 0 ? `Confirm with ${errors} issue${errors > 1 ? "s" : ""} flagged` : "Confirm and finish"}

@@ -1,7 +1,7 @@
 import "server-only";
-import { fetchWithRetry } from "../http";
+import { fetchWithRetry, type RetryOptions } from "../http";
 
-/** Gnani rate-limits bursts aggressively; retry 429/503 with short backoff. */
-export function gnaniFetch(url: string, init: RequestInit, options?: { retries?: number; baseDelayMs?: number }) {
-  return fetchWithRetry(url, init, options);
+/** Gnani's edge answers bursts with a fast 403 as well as 429/503; a valid key succeeds on retry. */
+export function gnaniFetch(url: string, init: RequestInit, options?: Omit<RetryOptions, "retryOn">) {
+  return fetchWithRetry(url, init, { retryOn: [403, 429, 503], ...options });
 }

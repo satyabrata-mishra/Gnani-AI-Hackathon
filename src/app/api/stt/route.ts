@@ -1,10 +1,13 @@
 import { toErrorResponse } from "@/lib/errors";
 import { transcribe } from "@/lib/gnani/stt";
 import { getLanguage } from "@/lib/languages";
+import { limitRequest } from "@/lib/rate-limit";
 
 const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 
 export async function POST(req: Request) {
+  const limited = limitRequest(req, "stt");
+  if (limited) return limited;
   const form = await req.formData().catch(() => null);
   const audio = form?.get("audio");
   const languageId = form?.get("languageId");

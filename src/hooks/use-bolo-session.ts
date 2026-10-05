@@ -148,17 +148,22 @@ export function useBoloSession({ template, languageId }: { template: FormTemplat
       fixingRef.current = false;
       setPrompt(donePrompt);
       setPhase("reviewing");
+      setReadback(null);
+      setReadbackFailed(false);
       startReview(snapshot);
-      if (wasFixing) return;
 
       const stillCurrent = () => !endedRef.current && ticket === flow.current;
-      appendLog({ role: "bolo", text: donePrompt.text });
-      await speak(donePrompt.text, languageId);
-      if (!stillCurrent()) return;
+      if (!wasFixing) {
+        appendLog({ role: "bolo", text: donePrompt.text });
+        await speak(donePrompt.text, languageId);
+        if (!stillCurrent()) return;
+      }
       try {
         const { text } = await requestReadBack(snapshot, custom);
         if (!stillCurrent()) return;
         setReadback(text);
+        // After a fix the card updates quietly; reading the whole form aloud again would be tiring.
+        if (wasFixing) return;
         appendLog({ role: "bolo", text });
         await speak(text, languageId);
       } catch {

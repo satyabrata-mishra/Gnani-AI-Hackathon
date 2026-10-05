@@ -2,6 +2,9 @@
   "name": "bolo",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,6 +14,7 @@
     "spike": "node --env-file-if-exists=.env.local scripts/spike.mjs",
     "test:audio": "node --no-warnings --env-file-if-exists=.env.local scripts/test-wav-pipeline.ts",
     "eval": "node scripts/eval-turns.mjs",
+    "eval:audio": "node --no-warnings --env-file-if-exists=.env.local scripts/eval-audio.ts",
     "smoke": "node scripts/smoke-session.mjs",
     "smoke:builder": "node scripts/smoke-builder.mjs",
     "probe:evon": "node --env-file-if-exists=.env.local scripts/probe-evon-space.mjs"

@@ -11,7 +11,7 @@ import { deleteSubmission, getSubmission, type Submission } from "@/lib/storage/
 import { useConfirm } from "../confirm-dialog";
 import { FormIcon } from "../form-icon";
 import { ClipButton } from "../session/clip-button";
-import { ChecksPassed } from "../session/review-card";
+import { CheckSummary, IssueList } from "../checks";
 import { formatWhen, headline } from "./submission-list";
 
 type Loaded = { submission: Submission; clips: Record<number, string> } | "missing" | "error" | null;
@@ -137,32 +137,14 @@ export function SubmissionDetail({ id }: { id: string }) {
           <p className="mt-0.5 text-xs text-ink-faint">For orientation only. The record and evidence below are authoritative.</p>
         </div>
         <p className="leading-relaxed text-ink">{s.review.summary}</p>
-        {s.review.issues.length === 0 && followUps.length === 0 ? (
-          <ChecksPassed />
-        ) : (
-          <ul className="space-y-2">
-            {followUps.length > 0 && (
-              <li className="rounded-lg border border-marigold/40 bg-marigold-soft px-3 py-2 text-sm text-warn">
-                Needs follow-up: {followUps.map(labelOf).join(", ")}
-              </li>
-            )}
-            {s.review.issues.map((issue, i) => (
-              <li
-                key={i}
-                className={cn(
-                  "rounded-lg border px-3 py-2 text-sm",
-                  issue.severity === "error" ? "border-danger/30 bg-danger-soft text-danger" : "border-marigold/40 bg-marigold-soft text-warn",
-                )}
-              >
-                <span className="mr-2 rounded bg-white/70 px-1.5 py-0.5 font-mono text-[10px] uppercase">
-                  {issue.source === "rules" ? "rule" : "model"}
-                </span>
-                {issue.message}
-                <span className="mt-0.5 block text-xs opacity-80">{issue.keys.map(labelOf).join(" · ")}</span>
-              </li>
-            ))}
-          </ul>
+        <CheckSummary issues={s.review.issues} />
+        {followUps.length > 0 && (
+          <p className="flex items-start gap-2 rounded-lg border border-marigold/40 bg-marigold-soft px-3 py-2 text-sm text-warn">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            Needs follow-up: {followUps.map(labelOf).join(", ")}
+          </p>
         )}
+        <IssueList issues={s.review.issues} labelOf={labelOf} />
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-line bg-surface">

@@ -91,7 +91,7 @@ export async function reviewSession(state: SessionState, custom?: FormTemplate):
       thinking: true,
       jsonSchema: { name: "form_review", schema: jsonSchemaFor(template) },
       maxTokens: 4096,
-      timeoutMs: 90_000,
+      timeoutMs: 30_000,
     },
     reviewSchema,
   );

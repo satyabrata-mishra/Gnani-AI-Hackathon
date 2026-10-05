@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Copy, Download, FileCheck2, RotateCcw } from "lucide-react";
+import { AlertTriangle, Check, Copy, Download, FileCheck2, RotateCcw } from "lucide-react";
 import type { BoloSession } from "@/hooks/use-bolo-session";
 import { cn } from "@/lib/cn";
 import { buildRecordExport, downloadJson } from "@/lib/export";
@@ -36,6 +36,9 @@ export function ResultView({
 
   if (!state || !review || !exported) return null;
   const json = JSON.stringify(exported, null, 2);
+  const followUps = new Set([...review.missing, ...state.skipped]).size;
+  const flagged = review.issues.length;
+  const clean = followUps === 0 && flagged === 0;
 
   function download() {
     downloadJson(exported, `bolo-${template.id}-${Date.now()}.json`);
@@ -54,15 +57,27 @@ export function ResultView({
   return (
     <section aria-labelledby="result-heading" className="space-y-5 rounded-2xl border border-line bg-surface p-5 sm:p-6">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-ok-soft text-ok">
-          <FileCheck2 className="h-5 w-5" aria-hidden />
+        <span
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+            clean ? "bg-ok-soft text-ok" : "bg-marigold-soft text-warn",
+          )}
+        >
+          {clean ? <FileCheck2 className="h-5 w-5" aria-hidden /> : <AlertTriangle className="h-5 w-5" aria-hidden />}
         </span>
         <div>
           <h2 id="result-heading" className="text-lg font-semibold text-ink">
-            Form complete
+            {clean ? "Record ready" : "Record ready, with items to follow up"}
           </h2>
           <p className="text-sm text-ink-soft">
-            Answered in {language.name}, delivered as validated English data with the audio behind each field.
+            {clean
+              ? `Answered in ${language.name}. Every answer passed the checks and keeps the evidence it came from.`
+              : `Answered in ${language.name}. Accepted fields are validated English values with their evidence; ${[
+                  followUps && `${followUps} field${followUps > 1 ? "s" : ""} still need${followUps > 1 ? "" : "s"} an answer`,
+                  flagged && `${flagged} issue${flagged > 1 ? "s are" : " is"} flagged for review`,
+                ]
+                  .filter(Boolean)
+                  .join(" and ")}.`}
           </p>
         </div>
       </div>

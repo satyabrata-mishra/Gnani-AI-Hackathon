@@ -46,52 +46,56 @@ export function FieldEditor({
   const id = `field-${index}`;
   return (
     <li className={cn("rounded-xl border bg-surface p-4", issues.length ? "border-danger/40" : "border-line")}>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="w-5 font-mono text-xs text-ink-faint">{index + 1}</span>
-        <label htmlFor={`${id}-label`} className="sr-only">
-          Field label
-        </label>
-        <input
-          id={`${id}-label`}
-          value={field.label}
-          onChange={(e) => onChange({ label: e.target.value })}
-          placeholder="Field label, e.g. Date of birth"
-          className={cn(input, "min-w-40 flex-1 font-medium")}
-        />
-        <label htmlFor={`${id}-type`} className="sr-only">
-          Answer type
-        </label>
-        <select
-          id={`${id}-type`}
-          value={field.type}
-          onChange={(e) => onChange({ type: e.target.value as FieldType })}
-          className={cn(input, "w-auto")}
-        >
-          {FIELD_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {TYPE_LABEL[t]}
-            </option>
-          ))}
-        </select>
-        <label className="flex items-center gap-1.5 text-xs text-ink-soft">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="w-5 shrink-0 font-mono text-xs text-ink-faint">{index + 1}</span>
+          <label htmlFor={`${id}-label`} className="sr-only">
+            Field label
+          </label>
           <input
-            type="checkbox"
-            checked={field.required}
-            onChange={(e) => onChange({ required: e.target.checked })}
-            className="accent-brand"
+            id={`${id}-label`}
+            value={field.label}
+            onChange={(e) => onChange({ label: e.target.value })}
+            placeholder="Field label, e.g. Date of birth"
+            className={cn(input, "min-w-0 flex-1 font-medium")}
           />
-          Required
-        </label>
-        <div className="flex items-center">
-          <IconButton label="Move up" onClick={() => onMove(-1)} disabled={index === 0}>
-            <ArrowUp className="h-3.5 w-3.5" />
-          </IconButton>
-          <IconButton label="Move down" onClick={() => onMove(1)} disabled={index === total - 1}>
-            <ArrowDown className="h-3.5 w-3.5" />
-          </IconButton>
-          <IconButton label="Remove field" onClick={onRemove} disabled={total === 1}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </IconButton>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-7 sm:flex-nowrap sm:pl-0">
+          <label htmlFor={`${id}-type`} className="sr-only">
+            Answer type
+          </label>
+          <select
+            id={`${id}-type`}
+            value={field.type}
+            onChange={(e) => onChange({ type: e.target.value as FieldType })}
+            className={cn(input, "w-auto")}
+          >
+            {FIELD_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {TYPE_LABEL[t]}
+              </option>
+            ))}
+          </select>
+          <label className="flex min-h-9 items-center gap-1.5 text-sm text-ink-soft">
+            <input
+              type="checkbox"
+              checked={field.required}
+              onChange={(e) => onChange({ required: e.target.checked })}
+              className="h-4 w-4 accent-brand"
+            />
+            Required
+          </label>
+          <div className="ml-auto flex items-center">
+            <IconButton label="Move up" onClick={() => onMove(-1)} disabled={index === 0}>
+              <ArrowUp className="h-4 w-4" />
+            </IconButton>
+            <IconButton label="Move down" onClick={() => onMove(1)} disabled={index === total - 1}>
+              <ArrowDown className="h-4 w-4" />
+            </IconButton>
+            <IconButton label="Remove field" onClick={onRemove} disabled={total === 1}>
+              <Trash2 className="h-4 w-4" />
+            </IconButton>
+          </div>
         </div>
       </div>
 
@@ -114,13 +118,22 @@ export function FieldEditor({
             )}
           </div>
         )}
-        <input
-          value={field.hint}
-          onChange={(e) => onChange({ hint: e.target.value })}
-          placeholder="Guidance for the AI, e.g. Convert 'dhai' to 2.5"
-          aria-label="Guidance for the AI"
-          className={cn(input, "text-xs text-ink-soft")}
-        />
+        <div>
+          <label htmlFor={`${id}-hint`} className="text-xs font-medium text-ink-soft">
+            Guidance for the AI <span className="font-normal text-ink-faint">(optional)</span>
+          </label>
+          <input
+            id={`${id}-hint`}
+            value={field.hint}
+            onChange={(e) => onChange({ hint: e.target.value })}
+            placeholder="e.g. Convert 'dhai' to 2.5"
+            aria-describedby={`${id}-hint-help`}
+            className={cn(input, "mt-1 text-ink-soft")}
+          />
+          <p id={`${id}-hint-help`} className="mt-1 text-xs text-ink-faint">
+            Helps Bolo interpret spoken answers. Whether a value is accepted is still decided by the field&apos;s type and limits.
+          </p>
+        </div>
         {issues.map((message, i) => (
           <p key={i} className="flex items-center gap-1.5 text-xs text-danger">
             <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
@@ -186,7 +199,7 @@ function IconButton({
       disabled={disabled}
       aria-label={label}
       title={label}
-      className="rounded-md p-1.5 text-ink-faint transition hover:bg-paper hover:text-ink disabled:opacity-30"
+      className="rounded-md p-2 text-ink-faint transition hover:bg-paper hover:text-ink disabled:opacity-30"
     >
       {children}
     </button>

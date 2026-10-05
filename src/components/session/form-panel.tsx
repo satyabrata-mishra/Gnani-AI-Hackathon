@@ -79,18 +79,18 @@ export function FormPanel({
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span className="text-sm text-ink-soft">{field.label}</span>
                     {!field.required && <span className="text-xs text-ink-faint">optional</span>}
-                    {filled?.confidence === "low" && <Badge tone="warn">check</Badge>}
-                    {filled && corrected.has(field.key) && <Badge tone="brand">corrected</Badge>}
-                    {!filled && skipped.has(field.key) && <Badge tone="warn">needs follow-up</Badge>}
+                    {filled?.confidence === "low" && <Badge tone="warn">Check this</Badge>}
+                    {filled && corrected.has(field.key) && <Badge tone="brand">Corrected</Badge>}
+                    {!filled && skipped.has(field.key) && <Badge tone="warn">Needs follow-up</Badge>}
                   </div>
 
                   {filled ? (
                     <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} key={filled.display}>
                       <p className="mt-0.5 font-medium text-ink">{filled.display}</p>
                       {filled.quote && (
-                        <p className="mt-1 flex items-center gap-2 text-sm text-ink-soft">
+                        <p className="mt-1 flex items-start gap-2 text-[15px] leading-6 text-ink-soft">
                           {clip && <ClipButton url={clip} label={`answer for ${field.label}`} />}
-                          <span lang={quoteLang} className="italic leading-snug">
+                          <span lang={quoteLang} className="italic">
                             &ldquo;{filled.quote}&rdquo;
                           </span>
                         </p>
@@ -120,10 +120,10 @@ export function FormPanel({
                   <button
                     type="button"
                     onClick={() => onFix(field.key)}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-line px-2 py-1 text-xs text-ink-soft transition hover:border-brand hover:text-brand"
+                    className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg border border-line px-2.5 text-sm text-ink-soft transition hover:border-brand hover:text-brand"
                     aria-label={`Fix ${field.label} by voice`}
                   >
-                    {filled ? <PencilLine className="h-3 w-3" aria-hidden /> : <Mic className="h-3 w-3" aria-hidden />}
+                    {filled ? <PencilLine className="h-3.5 w-3.5" aria-hidden /> : <Mic className="h-3.5 w-3.5" aria-hidden />}
                     {filled ? "Fix" : "Answer"}
                   </button>
                 )}
@@ -162,7 +162,7 @@ function Badge({ tone, children }: { tone: "warn" | "brand"; children: React.Rea
   return (
     <span
       className={cn(
-        "rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+        "rounded-full px-2 py-0.5 text-xs font-medium",
         tone === "warn" ? "bg-marigold-soft text-warn" : "bg-brand-soft text-brand",
       )}
     >

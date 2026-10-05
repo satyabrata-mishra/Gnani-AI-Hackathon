@@ -36,7 +36,7 @@ export interface RecorderOptions {
 
 function describeMicError(err: unknown): string {
   if (err instanceof DOMException) {
-    if (err.name === "NotAllowedError") return "Microphone access was blocked. Allow it in the browser's address bar and try again.";
+    if (err.name === "NotAllowedError") return "Microphone access was blocked. Allow it in the browser's address bar, then tap the microphone.";
     if (err.name === "NotFoundError") return "No microphone was found on this device.";
     if (err.name === "NotReadableError") return "The microphone is being used by another app.";
   }

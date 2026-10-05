@@ -9,11 +9,20 @@ import type { QuestionBank } from "./types";
 // One model call per (form, language) produces every spoken line Bolo needs.
 // Fixed lines keep turns to a single model call and let Timbre cache the audio.
 
-const bankSchema = z.object({
-  fields: z.array(z.object({ key: z.string(), ask: z.string().min(1), retry: z.string().min(1) })),
-  unclear: z.string().min(1),
-  done: z.string().min(1),
-});
+/** A short bank goes back to the model via reasonJson's repair turn, naming the missing keys. */
+function bankSchemaFor(template: FormTemplate) {
+  return z.object({
+    fields: z
+      .array(z.object({ key: z.string(), ask: z.string().min(1), retry: z.string().min(1) }))
+      .superRefine((fields, ctx) => {
+        const have = new Set(fields.map((f) => f.key));
+        const missing = template.fields.filter((f) => !have.has(f.key)).map((f) => f.key);
+        if (missing.length) ctx.addIssue({ code: "custom", message: `missing lines for: ${missing.join(", ")}` });
+      }),
+    unclear: z.string().min(1),
+    done: z.string().min(1),
+  });
+}
 
 function jsonSchemaFor(template: FormTemplate) {
   return {
@@ -23,6 +32,8 @@ function jsonSchemaFor(template: FormTemplate) {
     properties: {
       fields: {
         type: "array",
+        minItems: template.fields.length,
+        maxItems: template.fields.length,
         items: {
           type: "object",
           additionalProperties: false,
@@ -84,15 +95,14 @@ async function generate(template: FormTemplate, language: Language, scriptRetry 
         { role: "user", content: userPrompt(template) },
       ],
       jsonSchema: { name: "question_bank", schema: jsonSchemaFor(template) },
-      maxTokens: 2048,
+      // Bengali, Tamil and Malayalam take several tokens per word; 2048 truncated a 9-field bank.
+      maxTokens: 4096,
     },
-    bankSchema,
+    bankSchemaFor(template),
   );
 
   const fields: QuestionBank["fields"] = {};
   for (const f of data.fields) fields[f.key] = { ask: f.ask.trim(), retry: f.retry.trim() };
-  const missing = template.fields.filter((f) => !fields[f.key]).map((f) => f.key);
-  if (missing.length) throw new Error(`Question bank is missing fields: ${missing.join(", ")}`);
 
   const bank = { templateId: template.id, languageId: language.id, fields, unclear: data.unclear.trim(), done: data.done.trim() };
   const lines = [...Object.values(fields).flatMap((f) => [f.ask, f.retry]), bank.unclear, bank.done];
