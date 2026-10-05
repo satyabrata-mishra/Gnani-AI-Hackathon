@@ -34,12 +34,17 @@ export function ClipButton({ url, label, className }: { url: string; label: stri
       aria-label={playing ? `Pause ${label}` : `Play ${label}`}
       title={playing ? "Pause" : "Play the recorded answer"}
       className={cn(
-        "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-soft transition hover:border-brand hover:text-brand",
-        playing && "border-brand text-brand",
+        // 32px visual, 44px touch target via the pseudo-element.
+        "relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line-strong bg-surface text-ink-soft transition after:absolute after:-inset-1.5 hover:border-brand hover:text-brand",
+        playing && "border-brand bg-brand-soft text-brand",
         className,
       )}
     >
-      {playing ? <Pause className="h-3 w-3 fill-current" aria-hidden /> : <Play className="h-3 w-3 fill-current" aria-hidden />}
+      {playing ? (
+        <Pause className="h-3.5 w-3.5 fill-current" aria-hidden />
+      ) : (
+        <Play className="ml-0.5 h-3.5 w-3.5 fill-current" aria-hidden />
+      )}
     </button>
   );
 }

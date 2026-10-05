@@ -12,6 +12,7 @@
     "test:audio": "node --no-warnings --env-file-if-exists=.env.local scripts/test-wav-pipeline.ts",
     "eval": "node scripts/eval-turns.mjs",
     "smoke": "node scripts/smoke-session.mjs",
+    "smoke:builder": "node scripts/smoke-builder.mjs",
     "probe:evon": "node --env-file-if-exists=.env.local scripts/probe-evon-space.mjs"
   },
   "dependencies": {

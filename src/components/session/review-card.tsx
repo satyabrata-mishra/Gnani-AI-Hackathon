@@ -5,6 +5,22 @@ import { cn } from "@/lib/cn";
 import type { BoloSession } from "@/hooks/use-bolo-session";
 import type { FormTemplate } from "@/lib/forms/types";
 
+/** Keeps deterministic validation and the model's judgement visibly separate. */
+export function ChecksPassed() {
+  return (
+    <ul className="space-y-1 text-sm text-ok">
+      <li className="flex items-center gap-2">
+        <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
+        Rule checks passed: formats, ranges and the form&apos;s own rules
+      </li>
+      <li className="flex items-center gap-2">
+        <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
+        Model plausibility check found no issues
+      </li>
+    </ul>
+  );
+}
+
 export function ReviewCard({
   session,
   template,
@@ -62,7 +78,10 @@ export function ReviewCard({
         <p className="mb-2 text-sm font-medium text-ink-soft">Checks</p>
         {review ? (
           <div className="space-y-3">
-            <p className="text-sm leading-relaxed text-ink">{review.summary}</p>
+            <div>
+              <p className="text-xs font-medium text-ink-faint">AI-generated summary · the form on the right is the record</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink">{review.summary}</p>
+            </div>
             {review.missing.length > 0 && (
               <p className="flex items-start gap-2 rounded-lg bg-marigold-soft px-3 py-2 text-sm text-warn">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -70,10 +89,7 @@ export function ReviewCard({
               </p>
             )}
             {review.issues.length === 0 && review.missing.length === 0 ? (
-              <p className="flex items-center gap-2 text-sm text-ok">
-                <CheckCircle2 className="h-4 w-4" aria-hidden />
-                All rule and plausibility checks passed.
-              </p>
+              <ChecksPassed />
             ) : (
               <ul className="space-y-2">
                 {review.issues.map((issue, i) => (

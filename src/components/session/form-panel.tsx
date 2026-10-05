@@ -88,9 +88,9 @@ export function FormPanel({
                     <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} key={filled.display}>
                       <p className="mt-0.5 font-medium text-ink">{filled.display}</p>
                       {filled.quote && (
-                        <p className="mt-1 flex items-center gap-2 text-xs text-ink-faint">
+                        <p className="mt-1 flex items-center gap-2 text-sm text-ink-soft">
                           {clip && <ClipButton url={clip} label={`answer for ${field.label}`} />}
-                          <span lang={quoteLang} className="italic">
+                          <span lang={quoteLang} className="italic leading-snug">
                             &ldquo;{filled.quote}&rdquo;
                           </span>
                         </p>

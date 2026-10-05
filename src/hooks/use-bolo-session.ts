@@ -9,6 +9,9 @@ import {
   transcribeAudio,
 } from "@/lib/api-client";
 import type { QuestionBank, ReviewResult, SessionState, SpokenPrompt, TurnEvent } from "@/lib/engine/types";
+import { isCustomFormId } from "@/lib/forms/schema";
+import type { FormTemplate } from "@/lib/forms/types";
+import { saveSubmission } from "@/lib/storage/submissions";
 import { useSpeechPlayer } from "./use-speech-player";
 import { useVoiceRecorder, type Recording } from "./use-voice-recorder";
 
@@ -37,10 +40,12 @@ export interface LogEntry {
 
 interface Answer {
   transcript: string;
-  audioUrl?: string;
+  audio?: { url: string; blob: Blob };
   sttMs?: number;
   typed?: boolean;
 }
+
+export type SaveState = "idle" | "saving" | "saved" | "error";
 
 const MIN_RECORDING_MS = 400;
 const SILENCE_STOP_MS = 1600;
@@ -50,7 +55,9 @@ function messageOf(err: unknown) {
   return err instanceof Error ? err.message : "Something went wrong";
 }
 
-export function useBoloSession({ templateId, languageId }: { templateId: string; languageId: string }) {
+export function useBoloSession({ template, languageId }: { template: FormTemplate; languageId: string }) {
+  const templateId = template.id;
+  const custom = isCustomFormId(templateId) ? template : undefined;
   const player = useSpeechPlayer();
   const { speak, stop: stopSpeech } = player;
 
@@ -65,6 +72,7 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
   const [readback, setReadback] = useState<string | null>(null);
   const [readbackFailed, setReadbackFailed] = useState(false);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
+  const [saved, setSaved] = useState<{ state: SaveState; id?: string }>({ state: "idle" });
 
   const stateRef = useRef<SessionState | null>(null);
   const bankRef = useRef<QuestionBank | null>(null);
@@ -75,6 +83,7 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
   const reviewSeq = useRef(0);
   const logId = useRef(0);
   const urls = useRef<string[]>([]);
+  const blobs = useRef<Record<number, Blob>>({});
   const onRecording = useRef<(r: Recording | null) => void>(() => {});
 
   const recorder = useVoiceRecorder({
@@ -125,10 +134,10 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
     const seq = ++reviewSeq.current;
     setReview(null);
     setReviewError(null);
-    requestReview(snapshot)
+    requestReview(snapshot, custom)
       .then((r) => seq === reviewSeq.current && setReview(r))
       .catch((err) => seq === reviewSeq.current && setReviewError(messageOf(err)));
-  }, []);
+  }, [custom]);
 
   const finishForm = useCallback(
     async (donePrompt: SpokenPrompt) => {
@@ -147,7 +156,7 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
       await speak(donePrompt.text, languageId);
       if (!stillCurrent()) return;
       try {
-        const { text } = await requestReadBack(snapshot);
+        const { text } = await requestReadBack(snapshot, custom);
         if (!stillCurrent()) return;
         setReadback(text);
         appendLog({ role: "bolo", text });
@@ -156,7 +165,7 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
         if (stillCurrent()) setReadbackFailed(true);
       }
     },
-    [appendLog, languageId, speak, startReview],
+    [appendLog, custom, languageId, speak, startReview],
   );
 
   const submitTurn = useCallback(
@@ -166,9 +175,13 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
         if (!current || endedRef.current) return;
         setPhase("thinking");
         try {
-          const result = await sendTurn(current, answer.transcript);
+          const result = await sendTurn(current, answer.transcript, custom);
           if (endedRef.current) return;
-          if (answer.audioUrl) setClips((c) => ({ ...c, [result.state.turn]: answer.audioUrl! }));
+          if (answer.audio) {
+            const { url, blob } = answer.audio;
+            blobs.current[result.state.turn] = blob;
+            setClips((c) => ({ ...c, [result.state.turn]: url }));
+          }
           patchLog(entryId, {
             turn: result.state.turn,
             events: result.events,
@@ -183,7 +196,7 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
       };
       await attempt();
     },
-    [askAndListen, commit, fail, finishForm, patchLog],
+    [askAndListen, commit, custom, fail, finishForm, patchLog],
   );
 
   const processAnswer = useCallback(
@@ -191,7 +204,7 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
       const id = appendLog({
         role: "user",
         text: answer.transcript || "(no speech heard)",
-        audioUrl: answer.audioUrl,
+        audioUrl: answer.audio?.url,
         typed: answer.typed,
       });
       await submitTurn(id, answer);
@@ -207,13 +220,13 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
         await processAnswer({ transcript: "" });
         return;
       }
-      const audioUrl = URL.createObjectURL(recording.blob);
-      urls.current.push(audioUrl);
+      const audio = { url: URL.createObjectURL(recording.blob), blob: recording.blob };
+      urls.current.push(audio.url);
 
       const transcribe = async () => {
         try {
           const res = await transcribeAudio(recording.blob, languageId);
-          await processAnswer({ transcript: res.transcript, audioUrl, sttMs: res.latencyMs });
+          await processAnswer({ transcript: res.transcript, audio, sttMs: res.latencyMs });
         } catch (err) {
           fail(err, () => {
             setPhase("transcribing");
@@ -234,7 +247,7 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
     const attempt = async () => {
       setPhase("preparing");
       try {
-        const started = await startSession(templateId, languageId);
+        const started = await startSession(templateId, languageId, custom);
         if (endedRef.current) return;
         bankRef.current = started.bank;
         commit(started.state);
@@ -245,7 +258,7 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
     };
     setError(null);
     await attempt();
-  }, [askAndListen, commit, fail, languageId, templateId]);
+  }, [askAndListen, commit, custom, fail, languageId, templateId]);
 
   const stopListening = useCallback(() => {
     void handleRecording(stopRecording());
@@ -304,12 +317,34 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
 
   const replay = useCallback((text: string) => void speak(text, languageId), [languageId, speak]);
 
-  const confirm = useCallback(() => {
+  const confirm = useCallback(async () => {
     flow.current++;
     stopSpeech();
-    setCompletedAt(new Date().toISOString());
+    const createdAt = new Date().toISOString();
+    setCompletedAt(createdAt);
     setPhase("confirmed");
-  }, [stopSpeech]);
+
+    const final = stateRef.current;
+    if (!final || !review) return;
+    const id = crypto.randomUUID();
+    setSaved({ state: "saving" });
+    try {
+      await saveSubmission({
+        id,
+        createdAt,
+        template,
+        languageId,
+        values: final.values,
+        skipped: final.skipped,
+        review,
+        conversation: log.map(({ role, text, turn, typed }) => ({ role, text, turn, typed })),
+        clips: { ...blobs.current },
+      });
+      setSaved({ state: "saved", id });
+    } catch {
+      setSaved({ state: "error" });
+    }
+  }, [languageId, log, review, stopSpeech, template]);
 
   useEffect(() => {
     endedRef.current = false;
@@ -332,6 +367,7 @@ export function useBoloSession({ templateId, languageId }: { templateId: string;
     readback,
     readbackFailed,
     completedAt,
+    saved,
     player,
     recorder,
     begin,

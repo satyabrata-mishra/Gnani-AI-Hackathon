@@ -25,8 +25,10 @@
 1. Open the app, pick a form (farmer enrolment, motor insurance claim, or personal loan) and the citizen's language, and press **Start voice session**.
 2. Answer each question aloud. Bolo stops listening when you pause, fills the form live, reads everything back, and lets you fix any field by voice before confirming.
 3. The result screen shows the English record, with a play button for the recording behind each field and a JSON download.
-4. If the microphone misbehaves, open **Mic check** and press **Run full loop** to test Timbre and Prisma on their own.
-5. Browse `src/lib/gnani/` for the Prisma and Timbre clients, `src/lib/engine/` for the turn engine, `src/lib/forms/` for the validators, and `src/hooks/` for in-browser recording and playback.
+4. Open **Create a form**, describe any form in a sentence (or dictate it in Hinglish), adjust the drafted fields, and start a voice session on it straight away.
+5. Open **Submissions** for the officer view: every confirmed record with its checks, summary, recordings and full conversation.
+6. If the microphone misbehaves, open **Mic check** and press **Run full loop** to test Timbre and Prisma on their own.
+7. Browse `src/lib/gnani/` for the Prisma and Timbre clients, `src/lib/engine/` for the turn engine, `src/lib/forms/` for the validators, and `src/hooks/` for in-browser recording and playback.
 
 > **Reasoning model status:** Evon v3.3 is open-weight only (no hosted API), and it needs an 80 GB GPU. Until an Evon endpoint is available, Google Gemini (free tier) stands in behind the same OpenAI-compatible interface. Setting `EVON_BASE_URL` switches Bolo to Evon with no code changes, and the header shows which model is active.
 
@@ -58,8 +60,9 @@ Bolo is **not a chatbot**. It is a speech-to-structured-data engine: every answe
 | End-of-form review: rule checks + model plausibility check + English summary | ✅ Built |
 | Live voice session: auto-stop on silence, live form panel, type-instead fallback, retry on errors | ✅ Built · API smoke-tested, browser voice test pending |
 | Spoken read-back + fix any field by voice + English result with per-field audio evidence and JSON export | ✅ Built · API smoke-tested, browser voice test pending |
-| Describe-a-form → instant voice agent | 🗓️ Planned |
-| Officer dashboard | 🗓️ Planned |
+| Describe-a-form (typed or dictated, English or Hinglish) → editable form → instant voice agent | ✅ Built · API smoke-tested |
+| Officer dashboard: submissions, checks, summary, per-field audio, full conversation (stored in the browser) | ✅ Built |
+| Server-side storage (Supabase) for multi-device dashboards | 🗓️ Later, if needed |
 
 ---
 
@@ -130,7 +133,9 @@ Bolo is a turn-based loop where **the model proposes and code decides**: Evon ex
 - 🔁 **Resilient clients** retry rate limits (429) and outages (503) with backoff and surface the provider's own error messages.
 - 🧠 **One OpenAI-compatible reasoning interface** — Evon on vLLM, SGLang or llama.cpp, or Gemini as the stand-in, selected by `.env.local`; no code changes.
 - 🗂️ **Stateless sessions** — the browser holds the session state and sends it with each turn; the server re-validates every value before the final review.
-- 🌐 **Language catalogue** maps each language to Prisma and Timbre codes, a matched voice, and a reply style for Evon.
+- 🌐 **Language catalogue** maps each language to Prisma and Timbre codes, a matched voice, and a reply style for Evon. Spoken lines are checked for the language's native script and regenerated once if the model drifts into Roman letters.
+- 🧱 **Form builder** — the model drafts fields from a description; code normalises keys, types, ranges and options, and refuses Aadhaar, PAN, bank, card, OTP and password fields. Custom forms live in the browser and travel with each request, so the server stays stateless.
+- 🗄️ **Demo storage** — custom forms in `localStorage`, submissions and their recordings in IndexedDB. Nothing leaves the device except the API calls themselves.
 
 ### 🔬 Integration notes
 
@@ -154,21 +159,28 @@ bolo/
 │   ├── spike.mjs                 # Live check: Timbre → Prisma round trip + Evon latency
 │   ├── eval-turns.mjs            # Scores the turn engine on 24 messy multilingual answers
 │   ├── smoke-session.mjs         # Typed end-to-end session: start → turns → read-back → review
+│   ├── smoke-builder.mjs         # Describe-a-form draft + a typed session on the custom form
 │   ├── probe-evon-space.mjs      # Checks the community Evon demo on Hugging Face
 │   └── test-wav-pipeline.ts      # Verifies browser WAV encoding against Prisma
 └── src/
     ├── app/
     │   ├── page.tsx              # Start screen: choose form + language
     │   ├── session/page.tsx      # Live voice session
+    │   ├── builder/page.tsx      # Describe-a-form builder
+    │   ├── dashboard/            # Officer view: submission list + detail
     │   ├── mic-check/page.tsx    # Voice loop without the reasoning model
-    │   └── api/                  # stt, tts, health, session/{start,turn,readback,review}
+    │   └── api/                  # stt, tts, health, forms/draft, session/{start,turn,readback,review}
     ├── components/
-    │   └── session/              # Conversation, live form panel, review card, result view
-    ├── hooks/                    # useBoloSession (conversation loop), useVoiceRecorder, useSpeechPlayer
+    │   ├── session/              # Conversation, live form panel, review card, result view
+    │   ├── builder/              # Form builder + field editor
+    │   └── dashboard/            # Submission list + detail
+    ├── hooks/                    # useBoloSession, useVoiceRecorder, useSpeechPlayer, useCustomForms
     └── lib/
         ├── gnani/                # Prisma + Timbre clients
         ├── engine/               # Turn engine: extraction, apply rules, question bank, review
-        ├── forms/                # Form templates, field validators, cross-field checks
+        ├── forms/                # Templates, form schema + draft normaliser, validators, cross-field checks
+        ├── storage/              # Browser storage: custom forms, submissions with audio
+        ├── export.ts             # JSON record export (result screen and dashboard)
         ├── audio/wav.ts          # Downsampling + WAV encoding
         ├── reasoning.ts          # Evon / Gemini chat client (OpenAI-compatible)
         ├── http.ts               # Retrying fetch
@@ -187,9 +199,10 @@ npm run dev                     # http://localhost:3000
 ```
 
 ```bash
-npm test             # unit tests: validators, cross-field checks, turn rules
+npm test             # unit tests: validators, cross-field checks, turn rules, form schema, script check
 npm run eval         # live turn-engine score on messy multilingual answers (needs npm run dev)
 npm run smoke        # typed end-to-end session incl. read-back and review (needs npm run dev)
+npm run smoke:builder  # draft a form from a Hinglish description, then fill it (needs npm run dev)
 npm run spike        # live Timbre → Prisma round trip in Hindi and Kannada (+ Evon if configured)
 npm run test:audio   # browser WAV pipeline → /api/stt (needs npm run dev)
 npm run lint

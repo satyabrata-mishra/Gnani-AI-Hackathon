@@ -25,13 +25,16 @@ export interface Language {
   replyStyle: string;
   /** Fixed greeting used for mic checks: "Hello, I'm Bolo. Please tell me your full name." */
   sample: string;
+  /** Shown under the native name in pickers instead of `name`. */
+  tagline?: string;
 }
 
 export const LANGUAGES: Language[] = [
   {
     id: "hinglish",
     name: "Hinglish",
-    native: "Hinglish",
+    native: "हिंदी + English",
+    tagline: "Hinglish · code-mixed",
     stt: "hi-IN",
     tts: "hi-en",
     voice: "Poorvi",
@@ -51,6 +54,25 @@ export const LANGUAGES: Language[] = [
 ];
 
 export const DEFAULT_LANGUAGE_ID = "hinglish";
+
+const SCRIPT_PATTERNS: Partial<Record<SttLanguageCode, RegExp>> = {
+  "hi-IN": /[\u0900-\u097F]/,
+  "mr-IN": /[\u0900-\u097F]/,
+  "bn-IN": /[\u0980-\u09FF]/,
+  "pa-IN": /[\u0A00-\u0A7F]/,
+  "gu-IN": /[\u0A80-\u0AFF]/,
+  "ta-IN": /[\u0B80-\u0BFF]/,
+  "te-IN": /[\u0C00-\u0C7F]/,
+  "kn-IN": /[\u0C80-\u0CFF]/,
+  "ml-IN": /[\u0D00-\u0D7F]/,
+};
+
+/** True when nearly every line uses the language's native script (Timbre reads native script best). */
+export function usesNativeScript(lines: string[], language: Language): boolean {
+  const pattern = SCRIPT_PATTERNS[language.stt];
+  if (!pattern || lines.length === 0) return true;
+  return lines.filter((l) => pattern.test(l)).length >= Math.ceil(lines.length * 0.8);
+}
 
 export function getLanguage(id: string): Language | undefined {
   return LANGUAGES.find((l) => l.id === id);

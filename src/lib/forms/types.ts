@@ -8,12 +8,14 @@ export type FieldType =
   | "choice"
   | "yesno";
 
+export type FormIconName = "sprout" | "car" | "landmark" | "clipboard" | "heart" | "home" | "graduation";
+
 export interface FormField {
   key: string;
   label: string;
   type: FieldType;
   required: boolean;
-  /** Guidance for Evon on what counts as a valid answer. */
+  /** Guidance for the reasoning model on what counts as a valid answer. */
   hint: string;
   options?: string[];
   min?: number;
@@ -26,6 +28,6 @@ export interface FormTemplate {
   title: string;
   org: string;
   summary: string;
-  icon: "sprout" | "car" | "landmark";
+  icon: FormIconName;
   fields: FormField[];
 }

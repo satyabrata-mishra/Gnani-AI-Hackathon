@@ -1,4 +1,5 @@
 import type { QuestionBank, ReviewResult, SessionState, SpokenPrompt, TurnResult } from "./engine/types";
+import type { FormTemplate } from "./forms/types";
 
 export class ApiError extends Error {
   constructor(
@@ -30,23 +31,30 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function startSession(templateId: string, languageId: string) {
+// `template` is only sent for custom forms; built-in forms are resolved on the server.
+
+export function startSession(templateId: string, languageId: string, template?: FormTemplate) {
   return postJson<{ state: SessionState; prompt: SpokenPrompt; bank: QuestionBank }>("/api/session/start", {
     templateId,
     languageId,
+    template,
   });
 }
 
-export function sendTurn(state: SessionState, transcript: string) {
-  return postJson<TurnResult>("/api/session/turn", { state, transcript });
+export function sendTurn(state: SessionState, transcript: string, template?: FormTemplate) {
+  return postJson<TurnResult>("/api/session/turn", { state, transcript, template });
 }
 
-export function requestReview(state: SessionState) {
-  return postJson<ReviewResult>("/api/session/review", { state });
+export function requestReview(state: SessionState, template?: FormTemplate) {
+  return postJson<ReviewResult>("/api/session/review", { state, template });
 }
 
-export function requestReadBack(state: SessionState) {
-  return postJson<{ text: string; latencyMs: number }>("/api/session/readback", { state });
+export function requestReadBack(state: SessionState, template?: FormTemplate) {
+  return postJson<{ text: string; latencyMs: number }>("/api/session/readback", { state, template });
+}
+
+export function draftForm(description: string) {
+  return postJson<{ template: FormTemplate; notes: string[]; latencyMs: number }>("/api/forms/draft", { description });
 }
 
 export interface TranscriptResponse {

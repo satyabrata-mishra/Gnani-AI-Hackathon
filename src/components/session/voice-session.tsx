@@ -6,7 +6,6 @@ import { AlertTriangle, Keyboard, Loader2, Play, RotateCcw, SendHorizontal, Volu
 import { cn } from "@/lib/cn";
 import { useBoloSession, type BoloSession, type LogEntry, type SessionPhase } from "@/hooks/use-bolo-session";
 import type { TurnEvent } from "@/lib/engine/types";
-import { getFormTemplate } from "@/lib/forms/templates";
 import type { FormTemplate } from "@/lib/forms/types";
 import { getLanguage, type Language } from "@/lib/languages";
 import { MicButton, type MicButtonMode } from "../mic-button";
@@ -18,17 +17,16 @@ import { ReviewCard } from "./review-card";
 const ASKING: SessionPhase[] = ["speaking", "listening", "transcribing", "thinking"];
 
 export function VoiceSession({
-  templateId,
+  template,
   languageId,
   reasoningLabel,
 }: {
-  templateId: string;
+  template: FormTemplate;
   languageId: string;
   reasoningLabel: string;
 }) {
-  const template = getFormTemplate(templateId)!;
   const language = getLanguage(languageId)!;
-  const session = useBoloSession({ templateId, languageId });
+  const session = useBoloSession({ template, languageId });
   const { phase, state, prompt, log, review } = session;
 
   const corrected = useMemo(() => {
@@ -48,7 +46,7 @@ export function VoiceSession({
         {phase === "ready" ? (
           <Intro template={template} language={language} onStart={session.begin} />
         ) : phase === "confirmed" ? (
-          <ResultView session={session} template={template} language={language} reasoningLabel={reasoningLabel} />
+          <ResultView session={session} template={template} language={language} />
         ) : phase === "reviewing" ? (
           <ReviewCard session={session} template={template} speechLang={language.stt} reasoningLabel={reasoningLabel} />
         ) : (

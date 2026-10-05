@@ -5,7 +5,8 @@
   --color-surface: #ffffff;
   --color-ink: #16181d;
   --color-ink-soft: #4b505b;
-  --color-ink-faint: #8a8f99;
+  /* 4.6:1 on paper, 4.9:1 on white: AA for small secondary text. */
+  --color-ink-faint: #6b717c;
   --color-line: #e8e2d7;
   --color-line-strong: #d6cebf;
   --color-brand: #3b3fc4;

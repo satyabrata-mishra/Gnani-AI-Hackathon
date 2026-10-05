@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Copy, Download, FileCheck2, RotateCcw } from "lucide-react";
 import type { BoloSession } from "@/hooks/use-bolo-session";
+import { cn } from "@/lib/cn";
+import { buildRecordExport, downloadJson } from "@/lib/export";
 import type { FormTemplate } from "@/lib/forms/types";
 import type { Language } from "@/lib/languages";
 import { ClipButton } from "./clip-button";
@@ -12,47 +14,31 @@ export function ResultView({
   session,
   template,
   language,
-  reasoningLabel,
 }: {
   session: BoloSession;
   template: FormTemplate;
   language: Language;
-  reasoningLabel: string;
 }) {
   const { state, review, clips, completedAt } = session;
   const [copied, setCopied] = useState(false);
 
   const exported = useMemo(() => {
     if (!state || !review || !completedAt) return null;
-    const evidence = Object.fromEntries(
-      Object.entries(state.values).map(([key, f]) => [
-        key,
-        { display: f.display, quote: f.quote, confidence: f.confidence, turn: f.turn },
-      ]),
-    );
-    return {
-      form: template.id,
-      language: language.id,
+    return buildRecordExport({
+      template,
+      languageId: language.id,
       completedAt,
-      record: review.record,
-      evidence,
-      needsFollowUp: [...new Set([...review.missing, ...state.skipped])],
-      issues: review.issues,
-      summary: review.summary,
-      models: { stt: "Gnani Prisma", tts: "Gnani Timbre", reasoning: `${reasoningLabel} (${review.meta.model})` },
-    };
-  }, [completedAt, language.id, reasoningLabel, review, state, template.id]);
+      values: state.values,
+      skipped: state.skipped,
+      review,
+    });
+  }, [completedAt, language.id, review, state, template]);
 
   if (!state || !review || !exported) return null;
   const json = JSON.stringify(exported, null, 2);
 
   function download() {
-    const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `bolo-${template.id}-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadJson(exported, `bolo-${template.id}-${Date.now()}.json`);
   }
 
   async function copy() {
@@ -80,6 +66,26 @@ export function ResultView({
           </p>
         </div>
       </div>
+
+      {session.saved.state !== "idle" && (
+        <p
+          className={cn(
+            "rounded-lg px-3 py-2 text-sm",
+            session.saved.state === "error" ? "bg-danger-soft text-danger" : "bg-paper text-ink-soft",
+          )}
+        >
+          {session.saved.state === "saving" && "Saving to submissions…"}
+          {session.saved.state === "error" && "Couldn't save to this browser's storage. Download the JSON to keep this record."}
+          {session.saved.state === "saved" && (
+            <>
+              Saved to submissions on this device.{" "}
+              <Link href={`/dashboard/${session.saved.id}`} className="font-medium text-brand hover:text-brand-strong">
+                Open in the officer view
+              </Link>
+            </>
+          )}
+        </p>
+      )}
 
       <table className="w-full text-sm">
         <thead>

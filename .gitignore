@@ -34,7 +34,7 @@ yarn-error.log*
 .env*
 
 # spike script output
-/scripts/out/
+/scripts
 
 AGENTS.md
 CLAUDE.md

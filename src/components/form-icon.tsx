@@ -1,9 +1,17 @@
-import { Car, Landmark, Sprout, type LucideProps } from "lucide-react";
-import type { FormTemplate } from "@/lib/forms/types";
+import { Car, ClipboardList, GraduationCap, HeartPulse, Home, Landmark, Sprout, type LucideProps } from "lucide-react";
+import type { FormIconName } from "@/lib/forms/types";
 
-const ICONS = { sprout: Sprout, car: Car, landmark: Landmark } as const;
+const ICONS = {
+  sprout: Sprout,
+  car: Car,
+  landmark: Landmark,
+  clipboard: ClipboardList,
+  heart: HeartPulse,
+  home: Home,
+  graduation: GraduationCap,
+} as const;
 
-export function FormIcon({ icon, ...props }: { icon: FormTemplate["icon"] } & LucideProps) {
-  const Icon = ICONS[icon];
+export function FormIcon({ icon, ...props }: { icon: FormIconName } & LucideProps) {
+  const Icon = ICONS[icon] ?? ClipboardList;
   return <Icon aria-hidden {...props} />;
 }

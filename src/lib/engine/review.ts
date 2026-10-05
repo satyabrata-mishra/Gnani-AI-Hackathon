@@ -48,8 +48,8 @@ const SYSTEM_PROMPT = [
   "Return only JSON matching the schema.",
 ].join("\n");
 
-export async function reviewSession(state: SessionState): Promise<ReviewResult> {
-  const { template } = resolveSession(state.templateId, state.languageId);
+export async function reviewSession(state: SessionState, custom?: FormTemplate): Promise<ReviewResult> {
+  const { template } = resolveSession(state.templateId, state.languageId, custom);
   const today = todayInIndia();
 
   // Re-validate everything: session state comes back from the browser.

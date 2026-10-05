@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { CustomFormSession } from "@/components/session/custom-form-session";
 import { VoiceSession } from "@/components/session/voice-session";
 import { getServiceStatus } from "@/lib/env";
+import { isCustomFormId } from "@/lib/forms/schema";
 import { getFormTemplate } from "@/lib/forms/templates";
 import { getLanguage } from "@/lib/languages";
 
@@ -14,12 +16,14 @@ export const metadata: Metadata = { title: "Voice session — Bolo" };
 
 export default async function SessionPage(props: PageProps<"/session">) {
   const { form, lang } = await props.searchParams;
-  const template = typeof form === "string" ? getFormTemplate(form) : undefined;
+  const formId = typeof form === "string" ? form : "";
   const language = typeof lang === "string" ? getLanguage(lang) : undefined;
-  if (!template || !language) notFound();
+  const custom = isCustomFormId(formId);
+  const template = custom ? undefined : getFormTemplate(formId);
+  if (!language || (!custom && !template)) notFound();
 
   const status = getServiceStatus();
-  const ready = status.gnani && status.reasoning;
+  const reasoningLabel = status.gnani ? status.reasoning?.label : undefined;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -29,17 +33,19 @@ export default async function SessionPage(props: PageProps<"/session">) {
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Choose another form
         </Link>
-        {ready ? (
-          <VoiceSession
-            key={`${template.id}:${language.id}`}
-            templateId={template.id}
-            languageId={language.id}
-            reasoningLabel={status.reasoning!.label}
-          />
-        ) : (
+        {!reasoningLabel ? (
           <p className="rounded-2xl border border-line bg-surface p-6 text-ink-soft">
             Sessions need a Gnani API key and a reasoning model (Evon or Gemini) in <code>.env.local</code>.
           </p>
+        ) : template ? (
+          <VoiceSession
+            key={`${template.id}:${language.id}`}
+            template={template}
+            languageId={language.id}
+            reasoningLabel={reasoningLabel}
+          />
+        ) : (
+          <CustomFormSession formId={formId} languageId={language.id} reasoningLabel={reasoningLabel} />
         )}
       </main>
     </div>

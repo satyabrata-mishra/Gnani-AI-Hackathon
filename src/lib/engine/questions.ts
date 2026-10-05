@@ -1,7 +1,8 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { FormTemplate } from "../forms/types";
-import type { Language } from "../languages";
+import { usesNativeScript, type Language } from "../languages";
 import { reasonJson } from "../reasoning";
 import type { QuestionBank } from "./types";
 
@@ -68,13 +69,18 @@ function userPrompt(template: FormTemplate) {
   return `Form: ${template.title} (${template.org})\nFields:\n${lines.join("\n")}`;
 }
 
+/** Custom forms arrive from browsers, so the cache is keyed by content and bounded. */
+const CACHE_LIMIT = 200;
 const cache = new Map<string, Promise<QuestionBank>>();
 
-async function generate(template: FormTemplate, language: Language): Promise<QuestionBank> {
+async function generate(template: FormTemplate, language: Language, scriptRetry = false): Promise<QuestionBank> {
+  const system = scriptRetry
+    ? `${systemPrompt(language)}\nIMPORTANT: a previous attempt used the wrong script. Use the script named in the style for every line, even though the field labels are in English.`
+    : systemPrompt(language);
   const { data } = await reasonJson(
     {
       messages: [
-        { role: "system", content: systemPrompt(language) },
+        { role: "system", content: system },
         { role: "user", content: userPrompt(template) },
       ],
       jsonSchema: { name: "question_bank", schema: jsonSchemaFor(template) },
@@ -88,13 +94,19 @@ async function generate(template: FormTemplate, language: Language): Promise<Que
   const missing = template.fields.filter((f) => !fields[f.key]).map((f) => f.key);
   if (missing.length) throw new Error(`Question bank is missing fields: ${missing.join(", ")}`);
 
-  return { templateId: template.id, languageId: language.id, fields, unclear: data.unclear.trim(), done: data.done.trim() };
+  const bank = { templateId: template.id, languageId: language.id, fields, unclear: data.unclear.trim(), done: data.done.trim() };
+  const lines = [...Object.values(fields).flatMap((f) => [f.ask, f.retry]), bank.unclear, bank.done];
+  // One retry for the wrong script; after that a usable bank beats a failed session.
+  if (!scriptRetry && !usesNativeScript(lines, language)) return generate(template, language, true);
+  return bank;
 }
 
 export function getQuestionBank(template: FormTemplate, language: Language): Promise<QuestionBank> {
-  const key = `${template.id}:${language.id}`;
+  const hash = createHash("sha256").update(JSON.stringify(template)).digest("hex").slice(0, 16);
+  const key = `${template.id}:${hash}:${language.id}`;
   let pending = cache.get(key);
   if (!pending) {
+    if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value!);
     pending = generate(template, language);
     cache.set(key, pending);
     pending.catch(() => cache.delete(key));

@@ -23,15 +23,33 @@ function formatTime(ms: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+function Step({
+  n,
+  title,
+  hint,
+  meta,
+  children,
+}: {
+  n: number;
+  title: string;
+  hint: string;
+  meta: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
-      <h2 className="mb-4 flex items-center gap-3 text-sm font-medium text-ink">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-paper font-mono text-xs text-ink-soft">
+      <div className="mb-4 flex items-start gap-3">
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-paper font-mono text-xs text-ink-soft">
           {n}
         </span>
-        {title}
-      </h2>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <h2 className="font-medium text-ink">{title}</h2>
+            <span className="font-mono text-[11px] text-ink-faint">{meta}</span>
+          </div>
+          <p className="text-sm text-ink-soft">{hint}</p>
+        </div>
+      </div>
       {children}
     </section>
   );
@@ -140,14 +158,14 @@ export function MicCheck({ gnaniReady }: { gnaniReady: boolean }) {
           type="button"
           onClick={runLoop}
           disabled={recording || busy || player.state === "speaking"}
-          className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-medium text-white transition enabled:hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition enabled:hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Play className="h-4 w-4" aria-hidden />
-          Run full loop
+          Run the whole check
         </button>
       </div>
 
-      <Step n={1} title="Bolo asks · Timbre">
+      <Step n={1} title="Bolo asks" hint="Listen to the question." meta="Timbre · text-to-speech">
         <p lang={language.stt} className="text-xl leading-relaxed text-ink">
           {language.sample}
         </p>
@@ -180,7 +198,7 @@ export function MicCheck({ gnaniReady }: { gnaniReady: boolean }) {
         {player.error && <ErrorNote message={player.error} />}
       </Step>
 
-      <Step n={2} title="You answer">
+      <Step n={2} title="Your turn" hint="Tap the microphone and speak naturally." meta="your microphone">
         <div className="flex flex-col items-center gap-2 py-2">
           <MicButton
             mode={transcribing ? "busy" : recording ? "recording" : "idle"}
@@ -193,13 +211,13 @@ export function MicCheck({ gnaniReady }: { gnaniReady: boolean }) {
               ? "Transcribing…"
               : recording
                 ? `Listening ${formatTime(recorder.elapsedMs)} / ${formatTime(recorder.maxDurationMs)} · tap to stop`
-                : "Tap the mic and answer in any way you like"}
+                : "Tap to speak"}
           </p>
         </div>
         {recorder.error && <ErrorNote message={recorder.error} />}
       </Step>
 
-      <Step n={3} title="Bolo hears · Prisma">
+      <Step n={3} title="Bolo heard you" hint="Your words appear here." meta="Prisma · speech-to-text">
         {result ? (
           <div className="space-y-4">
             {result.transcript ? (
@@ -226,9 +244,7 @@ export function MicCheck({ gnaniReady }: { gnaniReady: boolean }) {
             </div>
           </div>
         ) : (
-          <p className={cn("text-sm", sttError ? "text-ink-soft" : "text-ink-faint")}>
-            Your transcript will appear here.
-          </p>
+          <p className={cn("text-sm", sttError ? "text-ink-soft" : "text-ink-faint")}>Nothing yet.</p>
         )}
         {sttError && <ErrorNote message={sttError} />}
       </Step>
