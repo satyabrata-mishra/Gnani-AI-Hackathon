@@ -2,236 +2,178 @@
 
 ### 🗣️ Any form. Any Indian language. Just speak.
 
-🏆 Built for Gnani AI's **[Great Indian AI Internship Challenge](https://www.gnani.ai/internship)** (2026) — a working application on Gnani AI's models and APIs for enterprises, developers and creators.
+**Live demo: [bolo1.netlify.app](https://bolo1.netlify.app)**
+
+🏆 Built for Gnani AI's **[Great Indian AI Internship Challenge](https://www.gnani.ai/internship)** (2026).
+
+Bolo turns any enterprise form into a **voice conversation in 11 Indian languages, Hinglish included**. It asks each question aloud in the citizen's language, understands natural, code-mixed answers ("EMI saadhe chaar hazaar ki hai… parso tak bhar dunga"), and hands the institution **clean, validated English data, with the recording behind every field**.
 
 ---
 
 ## 📦 Hackathon deliverables
 
-**Judges:** this is the submission repo (full-stack Next.js app). Links that are not live yet are marked as such.
-
 | Deliverable | Link |
 | --- | --- |
+| 🖥️ Live demo | **[bolo1.netlify.app](https://bolo1.netlify.app)** |
+| 🧠 Source code | [github.com/satyabrata-mishra/Gnani-AI-Hackathon](https://github.com/satyabrata-mishra/Gnani-AI-Hackathon) |
 | 🎬 Demo video (60 s) | _Coming soon_ |
-| 🖥️ Live demo | _Coming soon — deploys after the voice session milestone_ |
 | 📣 LinkedIn / X post | _Coming soon_ |
-| 🧠 Repo (this) | _Add GitHub URL after first push_ |
-| 🧩 Gnani models used | Prisma v2.5 (STT) · Timbre v2.5 (TTS) · Evon v3.3 (reasoning, pending a hosted endpoint; Gemini stands in meanwhile) |
-| 📘 Evon hosting guide | [`docs/evon-setup.md`](docs/evon-setup.md) |
+| 🧩 Gnani models used | **Prisma v2.5** (speech-to-text) · **Timbre v2.5** (text-to-speech) · **Evon v3.3** (reasoning; Gemini stands in until a hosted Evon endpoint is available) |
 | 👤 Author | Satyabrata Mishra · solo entry |
 
-### Quick start for judges
+---
 
-1. Open the app, pick a form (farmer enrolment, EMI repayment follow-up, or savings account opening) and the citizen's language, and press **Start voice session**.
-2. Answer each question aloud. Bolo stops listening when you pause, fills the form live, reads everything back, and lets you fix any field by voice before confirming.
-3. The result screen shows the English record, with a play button for the recording behind each field and a JSON download.
-4. Open **Create a form**, describe any form in a sentence (or dictate it in Hinglish), adjust the drafted fields, and start a voice session on it straight away.
-5. Open **Submissions** for the officer view: every confirmed record with its checks, summary, recordings and full conversation.
-6. If the microphone misbehaves, open **Mic check** and press **Run full loop** to test Timbre and Prisma on their own.
-7. Browse `src/lib/gnani/` for the Prisma and Timbre clients, `src/lib/engine/` for the turn engine, `src/lib/forms/` for the validators, and `src/hooks/` for in-browser recording and playback.
+## ⚡ Try it
 
-> **Reasoning model status:** Evon v3.3 is open-weight only (no hosted API), and it needs an 80 GB GPU. Until an Evon endpoint is available, Google Gemini (free tier) stands in behind the same OpenAI-compatible interface. Setting `EVON_BASE_URL` switches Bolo to Evon with no code changes, and the header shows which model is active.
+Open **[bolo1.netlify.app](https://bolo1.netlify.app)** in a recent Chrome, Edge, Safari or Firefox, on a laptop or phone, and allow microphone access.
+
+1. **Pick a form and a language** on the home page, then press **Start voice session**.
+2. **Answer each question aloud.** Bolo stops listening when you pause, fills the form live, and asks a follow-up when an answer is unclear or breaks a rule. You can also type an answer.
+3. **Check the read-back.** Bolo reads the form back in your language, flags anything suspicious, and lets you re-answer any field by voice.
+4. **See the result:** an English record, the recording behind each field, and a JSON download.
+5. **Create your own form:** describe it in a sentence (typed, or dictated in English or Hinglish), adjust the drafted fields, and start a voice session on it.
+6. **Open Submissions** for the officer view, or **Mic check** if the microphone misbehaves.
+
+> Use made-up details only. Bolo refuses to collect Aadhaar, PAN, bank account, card, OTP or password fields.
 
 ---
 
-Bolo turns any enterprise form into a **voice conversation in Indian languages**. It asks each question aloud in the citizen's language, understands natural, code-mixed answers ("mera loan do lakh… nahi, dhai lakh ka chahiye"), and hands the institution **clean, validated English data — with the audio behind every field**.
+## 🧭 Why Bolo
 
-India's most important forms — bank KYC, loan applications, insurance claims, scheme enrolment — are English-first and text-only. Hundreds of millions of people who are more comfortable speaking their own language depend on middlemen to fill them in, which costs them money and invites errors and fraud. Institutions pay again for manual data entry and clean-up.
+India's most important forms (bank KYC, loan collections, scheme enrolment) are English-first and text-only. People who are more comfortable speaking their own language depend on middlemen to fill them in, which costs money and invites errors. Institutions then pay again for manual data entry.
 
-Bolo is **not a chatbot**. It is a speech-to-structured-data engine: every answer is extracted, normalised (₹, dates, "dhai acre" → 2.5), validated against the form's rules, cross-checked against earlier answers, and linked to the exact recording it came from — so a compliance team can audit any field in one click.
-
-**The language bridge:** the citizen speaks Kannada, Tamil or Hinglish; the bank officer receives an English record. Neither has to learn the other's language.
+Bolo is **not a chatbot** but a speech-to-structured-data engine. Every answer is extracted, normalised (₹ amounts, dates, "dhai acre" → 2.5), validated, cross-checked against earlier answers, and linked to the recording it came from. The citizen speaks Kannada, Tamil or Hinglish; the officer receives an English record.
 
 ---
 
-## 🚦 Build status
+## 📝 Demo forms
 
-| Capability | Status |
-| --- | --- |
-| Prisma speech-to-text (REST) with inverse text normalisation | ✅ Working |
-| Timbre text-to-speech in 11 languages, with response caching | ✅ Working |
-| In-browser recording → 16 kHz WAV (AudioWorklet) | ✅ Working |
-| Mic check: Timbre asks → user answers → Prisma transcribes | ✅ Working |
-| Form templates + language/voice catalogue | ✅ Working |
-| Reasoning client: Evon or Gemini, reasoning on/off, strict JSON output with one repair retry | ✅ Built |
-| Field validators (phone, PIN, ranges, dates, choices, yes/no) + cross-field checks, unit-tested | ✅ Working |
-| Turn engine: extract → normalise → validate → follow-up, with corrections, retries and skips | ✅ Built · unit-tested |
-| Localised question bank per form and language (one model call, cacheable audio) | ✅ Built |
-| End-of-form review: rule checks + model plausibility check + English summary | ✅ Built |
-| Live voice session: auto-stop on silence, live form panel, type-instead fallback, retry on errors | ✅ Built · API smoke-tested, browser voice test pending |
-| Spoken read-back + fix any field by voice + English result with per-field audio evidence and JSON export | ✅ Built · API smoke-tested, browser voice test pending |
-| Describe-a-form (typed or dictated, English or Hinglish) → editable form → instant voice agent | ✅ Built · API smoke-tested |
-| Officer dashboard: submissions, checks, summary, per-field audio, full conversation (stored in the browser) | ✅ Built |
-| Server-side storage (Supabase) for multi-device dashboards | 🗓️ Later, if needed |
+The built-in forms follow Gnani's core business: voice automation for banks and lenders.
 
----
-
-## 👨‍💻 Author
-
-**Satyabrata Mishra**
-
----
-
-## 🚀 Great Indian AI Internship Challenge · Gnani AI
-
-### 🎯 The brief
-
-> Build a working application using Gnani AI's models and/or APIs that addresses a practical need for enterprises, developers or creators.
-
-| | |
-| --- | --- |
-| 🗓️ Build window | October 1 – **November 10, 2026** (final, no extensions) |
-| 📤 Submission | Demo or video · written project explanation · Gnani models/APIs used · LinkedIn or X post |
-| 🏅 Award fit (max one per entry) | Mixed Vibes (Hinglish and code-mixed voice) · Main Character (regional languages) · Real Deal (farmers, rural users) · Solo Ninja · Demo Day Drop (60-second video) |
-| 🔒 Data rule | Synthetic data only. Demo forms never use real phone, Aadhaar, PAN or account numbers |
-
-### 🧰 Models available
-
-| Model | What it is | How Bolo uses it |
+| Form | Use case | Rules that code enforces |
 | --- | --- | --- |
-| 🎧 **Prisma v2.5** | Speech-to-text for 10 Indian languages, trained on real telephony audio; handles code-switching and accents | Transcribes every answer in native script; inverse text normalisation turns spoken numbers into digits |
-| 🔊 **Timbre v2.5** (beta) | Text-to-speech, 10 Indian languages + Hinglish, 42 voices | Speaks every question and follow-up in the citizen's language |
-| 🧠 **Evon v3.3** | 30B-parameter (3.5B active) Indic reasoning model, open weights on Hugging Face, 128K context | Extracts and normalises values, catches contradictions, writes follow-up questions, explains its checks |
+| 💳 **EMI repayment follow-up** | Loan collections: reason for delay, amount, days until payment, payment mode | Payment less than one EMI · more than the overdue total · promised over 30 days out |
+| 🏦 **Savings account opening** | KYC onboarding: date of birth, occupation, income, nominee | Applicant under 18 · holder named as own nominee · high income for a student or homemaker |
+| 🌾 **Farmer support enrolment** | Rural scheme enrolment: village, land holding, main crop | Age and land ranges · fractions like "sava teen" → 3.25 acres |
 
-### 🏢 Why this fits Gnani
-
-Gnani's platform already covers voice agents, agent assist, conversation analytics and voice biometrics for BFSI. Bolo complements that stack with **structured, auditable data capture** for onboarding, KYC and claims — the step where an institution needs a validated record, not just a conversation.
-
-### ⏱️ Why now
-
-Until recently, voice interfaces broke on exactly the speech that matters in India: code-mixed sentences, regional accents and 8 kHz phone lines. Indic-native speech models and an open-weights Indic reasoning model now make it possible to go from a spoken, messy answer to a validated database field — in the user's own language, on infrastructure an institution controls.
+**Languages:** Hinglish · Hindi · English · Kannada · Tamil · Telugu · Bengali · Marathi · Gujarati · Malayalam · Punjabi. Each has its own Timbre voice, and spoken lines are checked for the language's native script.
 
 ---
 
 ## 🏗️ Architecture
 
-Bolo is a turn-based loop where **the model proposes and code decides**: Evon extracts values, deterministic validators accept or reject them.
+The **model proposes and code decides**: the reasoning model extracts values, and deterministic validators accept or reject them.
 
 ```
 🔊 Ask (Timbre) → 🎙️ Record (browser) → 🎧 Transcribe (Prisma) → 🧠 Understand (Evon) → ✅ Validate (code)
       ▲                                                                                      │
       └──────────────── next question or follow-up, in the user's language ─────────────────┘
                                                 │
-                                   📋 Read-back confirmation
-                                                │
-                     🧾 English record + per-field audio evidence
+                     📋 Read-back → 🧾 English record + per-field audio evidence
 ```
 
 | Layer | Responsibility |
 | --- | --- |
-| 🔊 Ask | Timbre speaks the question in the selected language and voice. Repeated prompts are served from cache to save credits and latency. |
-| 🎙️ Record | An AudioWorklet captures mono PCM in the browser, downsamples to 16 kHz and encodes WAV (Prisma does not accept the browser's default webm/opus). Stops 1.6 s after the speaker goes quiet, after 8 s with no speech, or at 30 s. |
-| 🎧 Transcribe | Prisma REST returns a native-script transcript with inverse text normalisation (phone numbers, ₹ amounts, dates as digits). |
-| 🧠 Understand | Evon receives the form schema, answers so far and the new transcript, and returns strict JSON: field updates, confidence, evidence, and a reply in the user's language. Reasoning is off for turns (latency) and on for the final review. |
-| ✅ Validate | Deterministic checks — PIN code, mobile number, ranges, enums, cross-field rules (age vs date of birth). Evon is never trusted to validate formats on its own. |
-| 📋 Confirm | The completed form is read back in the user's language while the review runs in the background. Any field can be re-answered by voice before confirming. |
-| 🧾 Evidence | Each field links to the transcript and audio clip that produced it. |
+| 🔊 Ask | Timbre speaks each question in the chosen language; repeated prompts come from cache. |
+| 🎙️ Record | An AudioWorklet records 16 kHz WAV in the browser and stops when the speaker goes quiet (or at 30 s). |
+| 🎧 Transcribe | Prisma returns a native-script transcript with spoken numbers as digits. |
+| 🧠 Understand | The reasoning model returns strict JSON: field updates, confidence, evidence and a reply in the user's language. |
+| ✅ Validate | Code checks mobile numbers, PIN codes, ranges, real dates, choices and cross-field rules. |
+| 📋 Confirm | The form is read back while a review runs; any field can be re-answered by voice. |
 
-### 🧩 How the pieces fit
+**Under the hood:**
 
-- 🔐 **Server-only API routes** (`/api/stt`, `/api/tts`, `/api/session/*`, `/api/health`) hold the keys; the browser never sees credentials.
-- 🔁 **Resilient clients** retry rate limits (429) and outages (503) with backoff; when Gemini sheds load or meters quota on one model, the other configured model answers instead.
-- 🚧 **Per-visitor limits** on every paid API route protect the public demo's quotas (on in production, `RATE_LIMIT=on|off` to override). Visitors who hit a limit, or arrive while an upstream service is busy, get a plain-language "try again in a minute" message. Counters are in memory, so each serverless instance counts separately.
-- 🧠 **One OpenAI-compatible reasoning interface** — Evon on vLLM, SGLang or llama.cpp, or Gemini as the stand-in, selected by `.env.local`; no code changes.
-- 🗂️ **Stateless sessions** — the browser holds the session state and sends it with each turn; the server re-validates every value before the final review.
-- 🌐 **Language catalogue** maps each language to Prisma and Timbre codes, a matched voice, and a reply style for Evon. Spoken lines are checked for the language's native script and regenerated once if the model drifts into Roman letters.
-- 🧱 **Form builder** — the model drafts fields from a description; code normalises keys, types, ranges and options, and refuses Aadhaar, PAN, bank, card, OTP and password fields. Custom forms live in the browser and travel with each request, so the server stays stateless.
-- 🗄️ **Demo storage** — custom forms in `localStorage`, submissions and their recordings in IndexedDB. Nothing leaves the device except the API calls themselves.
+- 🔐 API keys stay in server-only routes; the browser never sees them.
+- 🔁 Upstream calls retry on rate limits, and a fallback Gemini model answers when the main one is busy.
+- 🚧 Per-visitor rate limits protect the demo's quotas, with friendly "try again" messages.
+- 🧠 One OpenAI-compatible interface: setting `EVON_BASE_URL` switches from Gemini to Evon with no code changes.
+- 🗄️ No database: session state, custom forms and submissions (with recordings) live in the browser.
 
-### 🔬 Integration notes
+---
 
-Findings from building against the live APIs:
+## ✅ Quality checks
 
-- Prisma's inverse text normalisation converts spoken digits (`नौ आठ सात…` → `9876543210`) but **not** fractions like `ढाई एकड़` (2.5 acres) — that normalisation is Evon's job.
-- Timbre returns HTTP 500 when `container: "mp3"` is combined with `bitrate`/`sample_rate`; plain `{ "container": "mp3" }` works.
-- Bursts of ~5 calls trigger HTTP 429, so calls are sequential and retried with backoff.
+| Check | Result |
+| --- | --- |
+| Unit tests (`npm test`): validators, cross-field rules, turn engine, form schema, rate limiter | 36 / 36 passing |
+| Live eval (`npm run eval`): 26 messy answers in Hinglish, Hindi, Kannada, Tamil, Telugu, Bengali and Marathi | 26 / 26 passing · median 1.8 s per turn |
+| Type check, lint, production build, dependency audit | Clean · 0 vulnerabilities |
+
+---
+
+## 💻 Run it locally
+
+**Requirements:** Node.js 22.18+, a Gnani API key, and a Gemini API key (free from [Google AI Studio](https://aistudio.google.com/apikey)).
+
+```bash
+git clone https://github.com/satyabrata-mishra/Gnani-AI-Hackathon.git
+cd Gnani-AI-Hackathon
+npm install
+cp .env.example .env.local      # then add your keys
+npm run dev                     # http://localhost:3000
+```
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `GNANI_API_KEY` | Yes | Prisma and Timbre |
+| `GEMINI_API_KEY` | Yes, unless Evon is set | Gemini stand-in for Evon |
+| `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` | No | Main and fallback models |
+| `EVON_BASE_URL`, `EVON_API_KEY`, `EVON_MODEL` | No | Use Evon instead (see [`docs/evon-setup.md`](docs/evon-setup.md)) |
+| `RATE_LIMIT` | No | `on` or `off`; on in production by default |
+
+```bash
+npm test               # unit tests
+npm run eval           # live multilingual eval (needs npm run dev)
+npm run eval:audio     # Timbre → Prisma → engine round trip (needs npm run dev)
+npm run smoke          # typed end-to-end session (needs npm run dev)
+npm run lint && npm run build
+```
+
+### ☁️ Deployment
+
+The live demo runs on **Netlify**, which detects Next.js automatically. Import the repo, add `GNANI_API_KEY` and `GEMINI_API_KEY` as environment variables, and deploy. Netlify's HTTPS is what lets the browser use the microphone.
 
 ---
 
 ## 📁 Project structure
 
 ```
-bolo/
-├── docs/
-│   └── evon-setup.md             # Hosting Evon on Hugging Face Inference Endpoints
-├── public/
-│   └── worklets/pcm-recorder.js  # AudioWorklet: mic → Float32 PCM batches
-├── scripts/
-│   ├── spike.mjs                 # Live check: Timbre → Prisma round trip + Evon latency
-│   ├── eval-turns.mjs            # Scores the turn engine on 24 messy multilingual answers
-│   ├── smoke-session.mjs         # Typed end-to-end session: start → turns → read-back → review
-│   ├── smoke-builder.mjs         # Describe-a-form draft + a typed session on the custom form
-│   ├── probe-evon-space.mjs      # Checks the community Evon demo on Hugging Face
-│   └── test-wav-pipeline.ts      # Verifies browser WAV encoding against Prisma
+├── docs/evon-setup.md        # Hosting Evon on Hugging Face Inference Endpoints
+├── public/worklets/          # AudioWorklet recorder
+├── scripts/                  # Live evals and smoke tests
 └── src/
-    ├── app/
-    │   ├── page.tsx              # Start screen: choose form + language
-    │   ├── session/page.tsx      # Live voice session
-    │   ├── builder/page.tsx      # Describe-a-form builder
-    │   ├── dashboard/            # Officer view: submission list + detail
-    │   ├── mic-check/page.tsx    # Voice loop without the reasoning model
-    │   └── api/                  # stt, tts, health, forms/draft, session/{start,turn,readback,review}
-    ├── components/
-    │   ├── session/              # Conversation, live form panel, review card, result view
-    │   ├── builder/              # Form builder + field editor
-    │   └── dashboard/            # Submission list + detail
-    ├── hooks/                    # useBoloSession, useVoiceRecorder, useSpeechPlayer, useCustomForms
+    ├── app/                  # Pages (home, session, builder, dashboard, mic check) and API routes
+    ├── components/           # Session, builder, dashboard and layout components
+    ├── hooks/                # Session, recorder, speech player, custom forms
     └── lib/
-        ├── gnani/                # Prisma + Timbre clients
-        ├── engine/               # Turn engine: extraction, apply rules, question bank, review
-        ├── forms/                # Templates, form schema + draft normaliser, validators, cross-field checks
-        ├── storage/              # Browser storage: custom forms, submissions with audio
-        ├── export.ts             # JSON record export (result screen and dashboard)
-        ├── audio/wav.ts          # Downsampling + WAV encoding
-        ├── reasoning.ts          # Evon / Gemini chat client (OpenAI-compatible)
-        ├── http.ts               # Retrying fetch
-        ├── languages.ts          # Languages, voices, sample prompts
-        ├── env.ts                # Server-only configuration
-        └── errors.ts             # Typed service errors → JSON responses
+        ├── gnani/            # Prisma + Timbre clients
+        ├── engine/           # Turn engine: extraction, rules, question bank, review
+        ├── forms/            # Templates, validators, cross-field checks
+        └── reasoning.ts      # Evon / Gemini client (OpenAI-compatible)
 ```
 
-### Local development
-
-```bash
-cd bolo
-npm install
-cp .env.example .env.local      # add GNANI_API_KEY and GEMINI_API_KEY (or Evon values per docs/evon-setup.md)
-npm run dev                     # http://localhost:3000
-```
-
-```bash
-npm test             # unit tests: validators, cross-field checks, turn rules, form schema, script check
-npm run eval         # live turn-engine score on messy multilingual answers (needs npm run dev)
-npm run smoke        # typed end-to-end session incl. read-back and review (needs npm run dev)
-npm run smoke:builder  # draft a form from a Hinglish description, then fill it (needs npm run dev)
-npm run spike        # live Timbre → Prisma round trip in Hindi and Kannada (+ Evon if configured)
-npm run test:audio   # browser WAV pipeline → /api/stt (needs npm run dev)
-npm run lint
-npm run build
-```
-
-Demo forms use mock data only — never enter real Aadhaar or account numbers.
+**Stack:** Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 · Framer Motion · Zod · Netlify
 
 ---
 
-## 🛠️ Stack
+## 🏢 Why this fits Gnani
 
-| Area | Tools |
+Gnani's voice agents already handle collections, onboarding and support for banks, insurers and telecoms. Bolo adds **structured, auditable data capture**: the step where an institution needs a validated record, not just a conversation.
+
+| Model | How Bolo uses it |
 | --- | --- |
-| 🌐 App & runtime | Next.js 16 (App Router, route handlers) · React 19 · TypeScript |
-| 🎨 UI | Tailwind CSS v4 · Framer Motion · Lucide icons · Geist + Instrument Serif |
-| 🎧 Speech | Gnani Prisma v2.5 (STT) · Gnani Timbre v2.5 (TTS) · Web Audio AudioWorklet |
-| 🧠 Reasoning | Gnani Evon v3.3 behind an OpenAI-compatible server (vLLM or llama.cpp); Google Gemini free tier as the stand-in until then |
-| ✅ Validation | Zod |
-| ☁️ Deploy | Vercel (app) · self-hosted GPU endpoint for Evon (hosting being finalised) |
+| 🎧 **Prisma v2.5** | Transcribes every answer in native script, including code-mixed speech |
+| 🔊 **Timbre v2.5** | Speaks every question, follow-up and read-back in the citizen's language |
+| 🧠 **Evon v3.3** | Extracts and normalises values, catches contradictions, writes follow-ups |
 
 ---
 
-## 🔗 Related
+## 🚧 Known limitations
 
-- 📘 Evon hosting: [`docs/evon-setup.md`](docs/evon-setup.md)
-- 🎧 Gnani Speech API docs: https://docs.gnani.ai
-- 🧠 Evon model card: https://huggingface.co/gnani/gnani-evon-v3.3-30B-A3B
+- **Evon isn't hosted yet** (it needs an 80 GB GPU), so Gemini's free tier stands in; switching is a configuration change.
+- **Submissions are stored in the browser**, so the dashboard shows records from the same device only.
+- **The language is chosen before the session** and the form panel's labels stay in English.
+- **Synthetic data only:** this is a hackathon demo, not a production KYC system.
 
 ---
 

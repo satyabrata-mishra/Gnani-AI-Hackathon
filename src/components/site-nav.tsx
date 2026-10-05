@@ -19,6 +19,30 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+export function SiteLinks() {
+  const pathname = usePathname();
+  return (
+    <nav className="flex items-center gap-1">
+      {NAV.map((item) => {
+        const active = isActive(pathname, item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "rounded-lg px-3 py-2 text-sm font-medium transition",
+              active ? "bg-brand-soft text-brand" : "text-ink-soft hover:bg-surface hover:text-ink",
+            )}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function SiteMenu({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   // Remembering where the menu was opened closes it on navigation without an effect.
@@ -87,7 +111,7 @@ export function SiteMenu({ children }: { children: React.ReactNode }) {
                   );
                 })}
               </nav>
-              <div className="mt-3 border-t border-line pt-4 md:hidden">
+              <div className="mt-3 border-t border-line pt-4">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wider text-ink-faint">Services</p>
                 {children}
               </div>
