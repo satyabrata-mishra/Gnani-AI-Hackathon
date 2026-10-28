@@ -1,4 +1,4 @@
-import type { FormTemplate } from "./types";
+﻿import type { FormTemplate } from "./types";
 
 export const FORM_TEMPLATES: FormTemplate[] = [
   {
@@ -51,6 +51,20 @@ export const FORM_TEMPLATES: FormTemplate[] = [
       { key: "pincode", label: "PIN code", type: "pincode", required: true, hint: "6-digit Indian PIN code." },
       { key: "nominee_name", label: "Nominee name", type: "text", required: false, hint: "Full name of the person who receives the money if the holder dies." },
       { key: "nominee_relation", label: "Nominee relation", type: "choice", required: false, hint: "Nominee's relation to the applicant; wife, husband or patni map to Spouse.", options: ["Spouse", "Father", "Mother", "Son", "Daughter", "Brother", "Sister", "Other"] },
+      { key: "mobile", label: "Mobile number", type: "phone", required: true, hint: "10-digit Indian mobile number starting with 6-9." },
+    ],
+  },
+  {
+    id: "hospital-opd",
+    title: "Hospital OPD registration",
+    org: "Government hospital (demo)",
+    summary: "Register a patient for an outpatient department visit.",
+    icon: "heart",
+    fields: [
+      { key: "full_name", label: "Patient name", type: "text", required: true, hint: "Patient's full name; transliterate to English letters." },
+      { key: "age", label: "Age", type: "number", required: true, hint: "Patient's age in years.", min: 1, max: 120, unit: "years" },
+      { key: "gender", label: "Gender", type: "choice", required: true, hint: "Map the answer to one option.", options: ["Male", "Female", "Other"] },
+      { key: "main_symptom", label: "Main symptom", type: "text", required: true, hint: "Chief complaint in English (e.g. fever, chest pain, headache)." },
       { key: "mobile", label: "Mobile number", type: "phone", required: true, hint: "10-digit Indian mobile number starting with 6-9." },
     ],
   },
