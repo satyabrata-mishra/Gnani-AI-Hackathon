@@ -1,39 +1,65 @@
-# Bolo: Any form. Any Indian language. Just speak.
+<div align="center">
 
-**Live:** [bolo1.netlify.app](https://bolo1.netlify.app) · **Built on:** Gnani Prisma v2.5, Timbre v2.5 and Evon v3.3 · **Author:** Satyabrata Mishra
+# 🎙️ Bolo
 
-## The problem
+### Any form. Any Indian language. *Just speak.*
 
-India's most important forms (bank KYC, loan collections, hospital registration, scheme enrolment) are English-first and text-only. Hundreds of millions of people who are more comfortable speaking Hindi, Tamil, Kannada or Hinglish depend on middlemen to fill them in. That costs them money and invites errors and fraud, and institutions pay again for manual data entry and clean-up.
+[![Live demo](https://img.shields.io/badge/Live_demo-bolo1.netlify.app-3b3fc4?style=for-the-badge)](https://bolo1.netlify.app)
 
-## The solution
+![Prisma](https://img.shields.io/badge/Prisma_v2.5-speech--to--text-16181d?style=flat-square)
+![Timbre](https://img.shields.io/badge/Timbre_v2.5-text--to--speech-16181d?style=flat-square)
+![Evon](https://img.shields.io/badge/Evon_v3.3-reasoning-16181d?style=flat-square)
+![Languages](https://img.shields.io/badge/languages-11-f0a530?style=flat-square)
 
-Bolo turns any form into a **voice conversation in 11 Indian languages, Hinglish included**. It asks each question aloud, understands natural, code-mixed answers ("EMI saadhe chaar hazaar ki hai… parso tak bhar dunga"), and hands the institution **clean, validated English data, with the citizen's own recording behind every field**.
+*Gnani AI · Great Indian AI Internship Challenge · by Satyabrata Mishra*
 
-The citizen speaks their language; the officer receives an English record. Neither has to learn the other's.
+</div>
 
-## How it works
+---
 
-**Timbre asks → Prisma transcribes → Evon understands → code validates.** The model proposes values and deterministic rules decide what is accepted: mobile numbers, PIN codes, ranges, real dates, and cross-field checks such as an under-18 account applicant or a payment smaller than one EMI. Unclear answers get a follow-up in the same language, people can correct themselves mid-sentence, and the completed form is read back for confirmation before it is saved.
+## 😟 The problem
 
-Any organisation can **describe a new form in one sentence** and get a working voice agent for it immediately.
+India's most important forms (bank KYC, loan collections, hospital registration, scheme enrolment) are **English-first and text-only**. Millions who prefer to speak Hindi, Tamil, Kannada or Hinglish rely on middlemen, which costs them money and invites errors and fraud. Institutions then pay again for manual data entry.
 
-## Why it matters for Gnani
+## 💡 The solution
 
-Gnani's voice agents already run collections, onboarding and support for banks, insurers and hospitals. Bolo adds the step those conversations need at the end: a **structured, auditable record**. The built-in forms mirror Gnani's biggest use cases:
+Bolo turns any form into a **voice conversation in 11 Indian languages, Hinglish included**, and hands the institution **clean, validated English data, with the citizen's own recording behind every field**.
 
-- **EMI repayment follow-up:** reason for delay, amount and date of payment.
-- **Savings account opening:** KYC onboarding details and nominee.
-- **Hospital OPD registration:** department and chief complaint.
-- **Farmer support enrolment:** land holding and crop, for rural users.
+> 🗣️ *"EMI saadhe chaar hazaar ki hai… parso tak bhar dunga"*
+>
+> → `emi_amount: 4500` · `pay_in_days: 2`
 
-## What makes it different
+The citizen speaks their language; the officer gets an English record. Neither has to learn the other's.
 
-- **Not a chatbot:** a speech-to-structured-data engine where code, not the model, has the final word on every value.
-- **Audit trail:** every field links to the exact words and recording it came from.
-- **Built for Hinglish:** fractions like "dhai acre", Hindi number words, and English words mid-sentence are all handled.
-- **Safe by design:** refuses Aadhaar, PAN, bank, card, OTP and password fields; API keys never reach the browser.
+## ⚙️ How it works
 
-## Proof
+| 🔊 Bolo asks | 🎙️ You speak | 🧠 Bolo understands | ✅ Rules validate |
+| :---: | :---: | :---: | :---: |
+| Timbre | Prisma | Evon | code |
 
-Working end to end and deployed. 38 unit tests pass, and the engine scores **26/26 on messy multilingual answers** across seven languages, with a median of about 1.8 seconds per turn.
+**The model proposes, code decides.** Deterministic rules check mobile numbers, PIN codes, ranges, real dates and cross-field logic, such as an under-18 account applicant or a payment smaller than one EMI. Unclear answers get a follow-up, and the form is read back before it's saved. Any organisation can **describe a new form in one sentence** and get a working voice agent for it instantly.
+
+## 🏢 Built for Gnani's use cases
+
+| 💳 EMI follow-up | 🏦 Account opening | 🏥 OPD registration | 🌾 Farmer enrolment |
+| :---: | :---: | :---: | :---: |
+| Collections | KYC onboarding | Healthcare | Rural schemes |
+
+## ⭐ What makes it different
+
+- ✅ **Not a chatbot:** code has the final word on every value.
+- 🔎 **Audit trail:** each field links to the words and audio it came from.
+- 🇮🇳 **Hinglish-native:** "dhai acre" → 2.5, Hindi number words, mixed scripts.
+- 🔒 **Safe by design:** refuses Aadhaar, PAN, card and OTP fields; API keys never reach the browser.
+
+## 📊 Proof
+
+<div align="center">
+
+| **11** | **26 / 26** | **~1.8 s** | **38** |
+| :---: | :---: | :---: | :---: |
+| Indian languages | messy multilingual answers | median per turn | unit tests passing |
+
+**[▶ Try it live at bolo1.netlify.app](https://bolo1.netlify.app)**
+
+</div>
